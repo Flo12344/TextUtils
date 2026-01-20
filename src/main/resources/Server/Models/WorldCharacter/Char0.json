@@ -1,0 +1,18 @@
+{
+    "Model": "Items/WorldCharacter/Char_0.blockymodel",
+    "Texture": "Items/WorldCharacter/term_font.png",
+    "HitBox": {
+        "Max": {
+            "X": 0.02,
+            "Y": 0.05,
+            "Z": 0.02
+        },
+        "Min": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+        }
+    },
+    "MinScale": 0.25,
+    "MaxScale": 3
+}
