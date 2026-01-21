@@ -3,14 +3,13 @@ package io.github.flo_12344.textutils.system;
 import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.RefChangeSystem;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.model.config.Model;
 import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
-import com.hypixel.hytale.server.core.modules.entity.component.BoundingBox;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.PersistentModel;
-import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.component.MovingComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
@@ -52,6 +51,10 @@ public class SetupMove3dTextSystem extends RefChangeSystem<EntityStore, MovingCo
         store.getExternalData().getWorld().execute(() -> {
             store.removeComponent(ref, PersistentModel.getComponentType());
             store.removeComponent(ref, ModelComponent.getComponentType());
+            var text = store.getComponent(ref, TextUtils3DTextComponent.getComponentType());
+            var transform = store.getComponent(ref, TransformComponent.getComponentType());
+
+            TextUtils.INSTANCE.config.get().EditTextTransform(text.getId(), transform.getPosition(),transform.getRotation());
         });
     }
 }

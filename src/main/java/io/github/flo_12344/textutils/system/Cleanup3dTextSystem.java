@@ -26,18 +26,18 @@ public class Cleanup3dTextSystem extends TickingSystem<EntityStore> {
 
     @Override
     public void tick(float v, int i, @NonNullDecl Store<EntityStore> store) {
-        if(TextManager.to_delete.isEmpty()){
+        if (TextManager.to_delete.isEmpty()) {
             return;
         }
         World world = store.getExternalData().getWorld();
-        world.execute(()->{
+        world.execute(() -> {
             TextManager.to_delete.forEach(s -> {
-                    var t =TextManager.textUtilsEntity.get(s);
-                    store.getComponent(t, TextUtils3DTextComponent.getComponentType()).getText_entities().forEach(entityStoreRef -> {
-                        store.removeEntity(entityStoreRef, RemoveReason.REMOVE);
-                    });
-                    store.removeEntity(TextManager.textUtilsEntity.get(s), RemoveReason.REMOVE);
-                    TextManager.textUtilsEntity.remove(s);
+                var t = world.getEntityRef(TextManager.textUtilsEntity.get(s));
+                store.getComponent(t, TextUtils3DTextComponent.getComponentType()).getText_entities().forEach(entityStoreRef -> {
+                    store.removeEntity(world.getEntityRef(entityStoreRef), RemoveReason.REMOVE);
+                });
+                store.removeEntity(t, RemoveReason.REMOVE);
+                TextManager.textUtilsEntity.remove(s);
             });
             TextManager.to_delete.clear();
         });

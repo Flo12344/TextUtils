@@ -1,13 +1,13 @@
 {
   "Group": "TextUtils",
   "Name": "TextUtils",
-  "Version": "0.0.1",
-  "Description": "Description of your plugin",
+  "Version": "0.1.0",
+  "Description": "Utility mods for text and font handling",
   "Authors": [
     {
       "Name": "Flo_12344",
-      "Email": "your.email@example.com",
-      "Url": "https://your-website.com"
+      "Email": "flo_12344@flotterstudio.com",
+      "Url": "flotterstudio.com"
     }
   ],
   "Website": "",
@@ -16,5 +16,5 @@
   "OptionalDependencies": {},
   "DisabledByDefault": false,
   "IncludesAssetPack": true,
-  "Main": "io.github.flo_12344.textutils.ExamplePlugin"
+  "Main": "io.github.flo_12344.textutils.TextUtils"
 }

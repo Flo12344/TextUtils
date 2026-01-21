@@ -10,9 +10,9 @@ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 
 import java.util.Iterator;
 
-public class List3dTextCommand  extends CommandBase {
-    public List3dTextCommand(){
-        super("List3dText","");
+public class List3dTextCommand extends CommandBase {
+    public List3dTextCommand() {
+        super("List3dText", "");
     }
 
     @Override

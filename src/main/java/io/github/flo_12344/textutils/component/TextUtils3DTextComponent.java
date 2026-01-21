@@ -9,6 +9,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -17,22 +18,25 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
     private boolean edited;
     private String font_name;
     private String text;
-    private CopyOnWriteArrayList<Ref<EntityStore>> text_entities = new CopyOnWriteArrayList<>();
+    private String id;
+    private CopyOnWriteArrayList<UUID> text_entities = new CopyOnWriteArrayList<>();
 
     public static ComponentType<EntityStore, TextUtils3DTextComponent> getComponentType() {
         return TYPE;
     }
 
-    public TextUtils3DTextComponent(){}
+    public TextUtils3DTextComponent() {
+    }
 
-    public static void init(ComponentType<EntityStore, TextUtils3DTextComponent> type){
+    public static void init(ComponentType<EntityStore, TextUtils3DTextComponent> type) {
         TYPE = type;
     }
 
-    public TextUtils3DTextComponent(String font_name, String text){
-        this.font_name=font_name;
-        this.text=text;
-        edited=true;
+    public TextUtils3DTextComponent(String font_name, String text, String id) {
+        this.font_name = font_name;
+        this.text = text;
+        this.id = id;
+        edited = true;
     }
 
     public void setText(String text) {
@@ -57,21 +61,25 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
         edited = true;
     }
 
+    public String getId() {
+        return id;
+    }
+
     public String getFont_name() {
         return font_name;
     }
 
-    public CopyOnWriteArrayList<Ref<EntityStore>> getText_entities() {
+    public CopyOnWriteArrayList<UUID> getText_entities() {
         return text_entities;
     }
 
-    public void setText_entities(CopyOnWriteArrayList<Ref<EntityStore>> text_entities) {
+    public void setText_entities(CopyOnWriteArrayList<UUID> text_entities) {
         this.text_entities = text_entities;
     }
 
     @NullableDecl
     @Override
     public Component<EntityStore> clone() {
-        return new TextUtils3DTextComponent(font_name,text);
+        return new TextUtils3DTextComponent(font_name, text, UUID.randomUUID().toString());
     }
 }
