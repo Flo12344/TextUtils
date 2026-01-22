@@ -14,25 +14,23 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 public class Move3dTextUpdateSystem extends EntityTickingSystem<EntityStore> {
     @Override
     public void tick(float v, int i, @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
-        store.getExternalData().getWorld().execute(() -> {
-            var textUtilsEntity = archetypeChunk.getComponent(i, TextUtils3DTextComponent.getComponentType());
-            TransformComponent transform = archetypeChunk.getComponent(i, TransformComponent.getComponentType());
-            if (transform == null)
-                return;
-            int text_pos = 0;
-            float width = 0.1f;
-            var arr = textUtilsEntity.getText_entities();
-            var size = arr.size();
-            for (var uuid : arr) {
-                var c = store.getExternalData().getRefFromUUID(uuid);
-                Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
-                Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
-                TransformComponent t = store.getComponent(c, TransformComponent.getComponentType());
-                t.setPosition(offset.add(transform.getPosition()));
-                t.setRotation(transform.getRotation());
-                text_pos++;
-            }
-        });
+        var textUtilsEntity = archetypeChunk.getComponent(i, TextUtils3DTextComponent.getComponentType());
+        TransformComponent transform = archetypeChunk.getComponent(i, TransformComponent.getComponentType());
+        if (transform == null)
+            return;
+        int text_pos = 0;
+        float width = 0.1f;
+        var arr = textUtilsEntity.getText_entities();
+        var size = arr.size();
+        for (var uuid : arr) {
+            var c = store.getExternalData().getRefFromUUID(uuid);
+            Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
+            Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
+            TransformComponent t = commandBuffer.getComponent(c, TransformComponent.getComponentType());
+            t.setPosition(offset.add(transform.getPosition()));
+            t.setRotation(transform.getRotation());
+            text_pos++;
+        }
     }
 
     @NullableDecl

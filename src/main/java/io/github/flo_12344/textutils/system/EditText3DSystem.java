@@ -37,51 +37,50 @@ public class EditText3DSystem extends EntityTickingSystem<EntityStore> {
                     textUtilsEntity.getText(),
                     textUtilsEntity.getFont_name(),
                     transform.getPosition(),
-                    transform.getRotation()
+                    transform.getRotation(),
+                    commandBuffer
             );
             textUtilsEntity.setEdited(false);
         }
     }
 
-    private void RefreshText(World world, CopyOnWriteArrayList<UUID> list, String text, String font, Vector3d pos, Vector3f rot) {
+    private void RefreshText(World world, CopyOnWriteArrayList<UUID> list, String text, String font, Vector3d pos, Vector3f rot, CommandBuffer<EntityStore> commandBuffer) {
         Store<EntityStore> store = world.getEntityStore().getStore();
-        world.execute(() -> {
-            if (!list.isEmpty()) {
-                for (var c : list) {
-                    store.removeEntity(world.getEntityRef(c), RemoveReason.REMOVE);
-                }
-                list.clear();
+        if (!list.isEmpty()) {
+            for (var c : list) {
+                commandBuffer.removeEntity(world.getEntityRef(c), RemoveReason.REMOVE);
             }
-            int text_pos = 0;
-            float width = 0.1f;
-            var charArray = text.toCharArray();
-            for (char c : charArray) {
-                TransformComponent transform = new TransformComponent(pos, rot);
-                Vector3d right = new Vector3d(1, 0, 0).rotateY(rot.y);
-                Vector3d offset = right.scale((double) -charArray.length / 2 * width + text_pos * width);
+            list.clear();
+        }
+        int text_pos = 0;
+        float width = 0.1f;
+        var charArray = text.toCharArray();
+        for (char c : charArray) {
+            TransformComponent transform = new TransformComponent(pos, rot);
+            Vector3d right = new Vector3d(1, 0, 0).rotateY(rot.y);
+            Vector3d offset = right.scale((double) -charArray.length / 2 * width + text_pos * width);
 
-                transform.getPosition().add(offset);
+            transform.getPosition().add(offset);
 
-                Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
-                ModelAsset modelAsset = ModelAsset.getAssetMap().getAsset("Char" + Objects.toString((int) c));
+            Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
+            ModelAsset modelAsset = ModelAsset.getAssetMap().getAsset("Char" + Objects.toString((int) c));
 
 
-                if (modelAsset == null) {
-                    continue;
-                }
-                Model model = Model.createScaledModel(modelAsset, 1.0f);
-
-                var uuid = holder.ensureAndGetComponent(UUIDComponent.getComponentType()).getUuid();
-                holder.addComponent(TransformComponent.getComponentType(), transform);
-                holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
-                holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
-                holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
-                holder.addComponent(Intangible.getComponentType(), Intangible.INSTANCE);
-                store.addEntity(holder, AddReason.SPAWN);
-                list.add(uuid);
-                text_pos++;
+            if (modelAsset == null) {
+                continue;
             }
-        });
+            Model model = Model.createScaledModel(modelAsset, 1.0f);
+
+            var uuid = holder.ensureAndGetComponent(UUIDComponent.getComponentType()).getUuid();
+            holder.addComponent(TransformComponent.getComponentType(), transform);
+            holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
+            holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
+            holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
+            holder.addComponent(Intangible.getComponentType(), Intangible.INSTANCE);
+            commandBuffer.addEntity(holder, AddReason.SPAWN);
+            list.add(uuid);
+            text_pos++;
+        }
     }
 
     @NullableDecl

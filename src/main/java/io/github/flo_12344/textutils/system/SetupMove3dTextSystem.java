@@ -35,10 +35,8 @@ public class SetupMove3dTextSystem extends RefChangeSystem<EntityStore, MovingCo
             return;
         }
         Model model = Model.createScaledModel(modelAsset, 1f);
-        store.getExternalData().getWorld().execute(() -> {
-            store.addComponent(ref, PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
-            store.addComponent(ref, ModelComponent.getComponentType(), new ModelComponent(model));
-        });
+        commandBuffer.addComponent(ref, PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
+        commandBuffer.addComponent(ref, ModelComponent.getComponentType(), new ModelComponent(model));
     }
 
     @Override
@@ -48,13 +46,11 @@ public class SetupMove3dTextSystem extends RefChangeSystem<EntityStore, MovingCo
 
     @Override
     public void onComponentRemoved(@NonNullDecl Ref<EntityStore> ref, @NonNullDecl MovingComponent movingComponent, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
-        store.getExternalData().getWorld().execute(() -> {
-            store.removeComponent(ref, PersistentModel.getComponentType());
-            store.removeComponent(ref, ModelComponent.getComponentType());
-            var text = store.getComponent(ref, TextUtils3DTextComponent.getComponentType());
-            var transform = store.getComponent(ref, TransformComponent.getComponentType());
+        commandBuffer.removeComponent(ref, PersistentModel.getComponentType());
+        commandBuffer.removeComponent(ref, ModelComponent.getComponentType());
+        var text = commandBuffer.getComponent(ref, TextUtils3DTextComponent.getComponentType());
+        var transform = commandBuffer.getComponent(ref, TransformComponent.getComponentType());
 
-            TextUtils.INSTANCE.config.get().EditTextTransform(text.getId(), transform.getPosition(),transform.getRotation());
-        });
+        TextUtils.INSTANCE.config.get().EditTextTransform(text.getId(), transform.getPosition(), transform.getRotation());
     }
 }
