@@ -44,10 +44,6 @@ public class EditText3DSystem extends EntityTickingSystem<EntityStore> {
                     transform.getRotation(),
                     commandBuffer
             );
-            if (!TextManager.textUtilsEntity.containsKey(textUtilsEntity.getId())) {
-                var uuid = commandBuffer.getComponent(archetypeChunk.getReferenceTo(i), UUIDComponent.getComponentType());
-                TextManager.textUtilsEntity.put(textUtilsEntity.getId(), uuid.getUuid());
-            }
             textUtilsEntity.setEdited(false);
         }
     }

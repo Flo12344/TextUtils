@@ -11,6 +11,7 @@ import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.command.system.basecommands.CommandBase;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.modules.entity.component.BoundingBox;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.PersistentModel;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -41,20 +42,21 @@ public class Move3dTextCommand extends AbstractPlayerCommand {
             return;
         }
         var entity = world.getEntityRef(TextManager.textUtilsEntity.get(_label));
+        ModelAsset modelAsset = ModelAsset.getAssetMap().getAsset("Fixed_Hologram");
+        if (modelAsset == null) {
+            return;
+        }
+        Model model = Model.createScaledModel(modelAsset, 1f);
         world.execute(() -> {
             if (store.getComponent(entity, MovingComponent.getComponentType()) == null) {
-                store.addComponent(entity, MovingComponent.getComponentType(), new MovingComponent());
-//                ModelAsset modelAsset = ModelAsset.getAssetMap().getAsset("Fixed_Hologram");
-//                if (modelAsset == null) {
-//                    return;
-//                }
-//                Model model = Model.createScaledModel(modelAsset, 1f);
+
 //                store.addComponent(entity, PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
 //                store.addComponent(entity, ModelComponent.getComponentType(), new ModelComponent(model));
+                store.addComponent(entity, MovingComponent.getComponentType(), new MovingComponent());
             } else {
-                store.removeComponent(entity, MovingComponent.getComponentType());
 //                store.removeComponent(entity, PersistentModel.getComponentType());
 //                store.removeComponent(entity, ModelComponent.getComponentType());
+                store.removeComponent(entity, MovingComponent.getComponentType());
             }
         });
 
