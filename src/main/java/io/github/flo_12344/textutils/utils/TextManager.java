@@ -14,7 +14,6 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
-import io.github.flo_12344.textutils.data.Text3dData;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
@@ -23,13 +22,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TextManager {
     public static ConcurrentHashMap<String, UUID> textUtilsEntity = new ConcurrentHashMap<>();
-    public static CopyOnWriteArrayList<String> to_delete = new CopyOnWriteArrayList<>();
 
     public static void SpawnText(Vector3d pos, Vector3f rot, @Nonnull World world, String text, String _label) {
-        SpawnText(pos, rot, world, text, _label, false);
-    }
-
-    public static void SpawnText(Vector3d pos, Vector3f rot, @Nonnull World world, String text, String _label, boolean from_load) {
         world.execute(() -> {
             Store<EntityStore> store = world.getEntityStore().getStore();
             Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
@@ -41,17 +35,16 @@ public class TextManager {
             TransformComponent transform = new TransformComponent(pos, rot);
 
             holder.addComponent(TransformComponent.getComponentType(), transform);
-            var bb = model.getBoundingBox();
-            holder.addComponent(BoundingBox.getComponentType(), new BoundingBox(bb));
+            
             holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
+            holder.ensureComponent(UUIDComponent.getComponentType());
             holder.addComponent(Intangible.getComponentType(), Intangible.INSTANCE);
-            holder.addComponent(
+//            TextManager.textUtilsEntity.put(_label, holder.ensureAndGetComponent(UUIDComponent.getComponentType()).getUuid());
+            store.addComponent(store.addEntity(holder, AddReason.SPAWN),
                     TextUtils3DTextComponent.getComponentType(),
                     new TextUtils3DTextComponent("", text, _label));
-            TextManager.textUtilsEntity.put(_label, holder.ensureAndGetComponent(UUIDComponent.getComponentType()).getUuid());
-            store.addEntity(holder, AddReason.SPAWN);
-            if (!from_load)
-                TextUtils.INSTANCE.config.get().AddText(_label, new Text3dData(pos, rot, text, world.getName()));
+//            if (!from_load)
+//                TextUtils.INSTANCE.config.get().AddText(_label, new Text3dData(pos, rot, text, world.getName()));
         });
     }
 }

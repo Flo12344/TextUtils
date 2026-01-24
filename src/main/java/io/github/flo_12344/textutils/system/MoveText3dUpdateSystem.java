@@ -11,7 +11,7 @@ import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
-public class Move3dTextUpdateSystem extends EntityTickingSystem<EntityStore> {
+public class MoveText3dUpdateSystem extends EntityTickingSystem<EntityStore> {
     @Override
     public void tick(float v, int i, @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
         var textUtilsEntity = archetypeChunk.getComponent(i, TextUtils3DTextComponent.getComponentType());

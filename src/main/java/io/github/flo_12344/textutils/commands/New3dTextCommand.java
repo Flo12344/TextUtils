@@ -20,7 +20,6 @@ import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
-import io.github.flo_12344.textutils.data.Text3dData;
 import io.github.flo_12344.textutils.utils.TextManager;
 
 import javax.annotation.Nonnull;
@@ -33,7 +32,7 @@ public class New3dTextCommand extends CommandBase {
     RequiredArg<String> text;
 
     public New3dTextCommand() {
-        super("NewText3D", "");
+        super("New3dText", "");
         position = withRequiredArg("position", "", ArgTypes.VECTOR3I);
         text = withRequiredArg("text", "", ArgTypes.STRING);
         rotation = withOptionalArg("rotation", "", ArgTypes.ROTATION);

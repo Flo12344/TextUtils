@@ -1,8 +1,10 @@
 package io.github.flo_12344.textutils.system;
 
+import com.hypixel.hytale.builtin.hytalegenerator.LoggerUtil;
 import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.asset.type.model.config.Model;
@@ -12,7 +14,9 @@ import com.hypixel.hytale.server.core.modules.entity.component.*;
 import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
+import io.github.flo_12344.textutils.utils.TextManager;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
@@ -40,6 +44,10 @@ public class EditText3DSystem extends EntityTickingSystem<EntityStore> {
                     transform.getRotation(),
                     commandBuffer
             );
+            if (!TextManager.textUtilsEntity.containsKey(textUtilsEntity.getId())) {
+                var uuid = commandBuffer.getComponent(archetypeChunk.getReferenceTo(i), UUIDComponent.getComponentType());
+                TextManager.textUtilsEntity.put(textUtilsEntity.getId(), uuid.getUuid());
+            }
             textUtilsEntity.setEdited(false);
         }
     }

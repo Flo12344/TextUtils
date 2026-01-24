@@ -1,19 +1,30 @@
 package io.github.flo_12344.textutils.component;
 
+import com.hypixel.hytale.codec.Codec;
+import com.hypixel.hytale.codec.KeyedCodec;
+import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.component.Component;
 import com.hypixel.hytale.component.ComponentType;
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TextUtils3DTextComponent implements Component<EntityStore> {
+    public static final BuilderCodec<TextUtils3DTextComponent> CODEC =
+            BuilderCodec.builder(TextUtils3DTextComponent.class, TextUtils3DTextComponent::new)
+                    .append(new KeyedCodec<>("FontName", Codec.STRING),
+                            (c, v) -> c.font_name = v,
+                            c -> c.font_name).add()
+                    .append(new KeyedCodec<>("Text", Codec.STRING),
+                            (c, v) -> c.text = v,
+                            c -> c.text).add()
+                    .append(new KeyedCodec<>("TextId", Codec.STRING),
+                            (c, v) -> c.id = v,
+                            c -> c.id).add()
+                    .build();
+
     private static ComponentType<EntityStore, TextUtils3DTextComponent> TYPE;
     private boolean edited;
     private String font_name;
@@ -26,6 +37,7 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
     }
 
     public TextUtils3DTextComponent() {
+        edited = true;
     }
 
     public static void init(ComponentType<EntityStore, TextUtils3DTextComponent> type) {
@@ -80,6 +92,6 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
     @NullableDecl
     @Override
     public Component<EntityStore> clone() {
-        return new TextUtils3DTextComponent(font_name, text, UUID.randomUUID().toString());
+        return new TextUtils3DTextComponent(font_name, text, getId());
     }
 }
