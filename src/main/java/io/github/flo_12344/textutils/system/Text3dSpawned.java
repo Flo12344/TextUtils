@@ -26,12 +26,7 @@ public class Text3dSpawned extends HolderSystem<EntityStore> {
             TextManager.textUtilsEntity.put(textUtils.getId(), uuid);
         }
 
-        ModelAsset modelAsset = ModelAsset.getAssetMap().getAsset("Fixed_Hologram");
-        if (modelAsset == null) {
-            return;
-        }
-        Model model = Model.createScaledModel(modelAsset, 0.1f);
-        holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
+        
     }
 
     @Override
