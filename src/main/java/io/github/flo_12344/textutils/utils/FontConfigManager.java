@@ -1,7 +1,18 @@
 package io.github.flo_12344.textutils.utils;
 
+import io.github.flo_12344.textutils.TextUtils;
+import org.bouncycastle.math.raw.Mod;
+
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.Objects;
 
 public class FontConfigManager {
     public static FontConfigManager INSTANCE;
@@ -40,20 +51,122 @@ public class FontConfigManager {
 //        public static final int ARABIC_FLAG = 1048576; // 1536 -> 1791
 
         public int loaded = 0;
+        public FontMetrics fm;
+        public int max_width = 0;
+        public int max_height = 0;
+        public int texture_size = 0;
     }
 
     private HashMap<String, FontSettings> loaded_font = new HashMap<>();
 
-    public void Load(String font_name, float size) {
+    public void Init(String font_name) throws IOException, FontFormatException {
+        String dir_path = TextUtils.INSTANCE.getDataDirectory() + File.separator + "data" + File.separator + font_name;
+        File dir = new File(dir_path);
+        if (!dir.exists())
+            dir.mkdirs();
+        Font font =
+                Font.createFont(Font.TRUETYPE_FONT, new File(TextUtils.INSTANCE.getDataDirectory() + File.separator + "fonts" + File.separator + font_name + ".ttf"))
+                        .deriveFont(32f);
+        BufferedImage tempImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D tempG2d = tempImage.createGraphics();
+        tempG2d.setFont(font);
+        FontMetrics fm = tempG2d.getFontMetrics();
+        tempG2d.dispose();
+        int potSize = 32; // Default minimum
+        int maxWidth = Arrays.stream(fm.getWidths()).max().getAsInt();
+        while (potSize < Math.max(maxWidth, fm.getHeight())) {
+            potSize *= 2;
+        }
+        FontSettings fs = new FontSettings();
+        fs.fm = fm;
+        fs.max_height = fm.getHeight();
+        fs.max_width = maxWidth;
+        fs.texture_size = potSize;
+        loaded_font.put(font_name, fs);
+        ModelGenerator.genBaseCharacterModel(dir_path, potSize);
     }
 
-    public void LoadRangesOf(String font_name, int start, int end) {
+    public void LoadRanges(String font_name, int start, int end) throws IOException, FontFormatException {
+        Font font = Font.createFont(Font.TRUETYPE_FONT, new File(TextUtils.INSTANCE.getDataDirectory() + File.separator + "fonts" + File.separator + font_name + ".ttf")).deriveFont(32f);
+        for (char c = (char) start; c < end; c++) {
+            LoadCharacter(font_name, c, font);
+        }
     }
 
-    public void LoadFlags(String font_name, int flag) {
+    public void LoadFlags(String font_name, int flag) throws IOException, FontFormatException {
+        if ((flag & FontSettings.BASIC_LATIN_FLAG) == FontSettings.BASIC_LATIN_FLAG) {
+            LoadRanges(font_name, 0, 127);
+        }
+        if ((flag & FontSettings.LATIN_EXT_1_FLAG) == FontSettings.LATIN_EXT_1_FLAG) {
+            LoadRanges(font_name, 128, 255);
+        }
+        if ((flag & FontSettings.LATIN_EXT_AB_FLAG) == FontSettings.LATIN_EXT_AB_FLAG) {
+            LoadRanges(font_name, 256, 591);
+        }
+        if ((flag & FontSettings.PUNCTUATION_FLAG) == FontSettings.PUNCTUATION_FLAG) {
+            LoadRanges(font_name, 8192, 8303);
+        }
+        if ((flag & FontSettings.CURRENCY_FLAG) == FontSettings.CURRENCY_FLAG) {
+            LoadRanges(font_name, 8352, 8377);
+        }
+        if ((flag & FontSettings.ARROW_FLAG) == FontSettings.ARROW_FLAG) {
+            LoadRanges(font_name, 8592, 8703);
+        }
+        if ((flag & FontSettings.BOX_FLAG) == FontSettings.BOX_FLAG) {
+            LoadRanges(font_name, 9472, 9599);
+        }
     }
 
-    public void LoadFlags(String font_name, String flag) {
+    public void LoadFlags(String font_name, String flag) throws IOException, FontFormatException {
+        if (Objects.equals(flag.toLowerCase(), "latin")) {
+            LoadFlags(font_name, FontSettings.BASIC_LATIN_FLAG);
+        }
+        if (Objects.equals(flag.toLowerCase(), "latin_1")) {
+            LoadFlags(font_name, FontSettings.LATIN_EXT_1_FLAG);
+        }
+        if (Objects.equals(flag.toLowerCase(), "latin_ab")) {
+            LoadFlags(font_name, FontSettings.LATIN_EXT_AB_FLAG);
+        }
+        if (Objects.equals(flag.toLowerCase(), "punct")) {
+            LoadFlags(font_name, FontSettings.PUNCTUATION_FLAG);
+        }
+        if (Objects.equals(flag.toLowerCase(), "currency")) {
+            LoadFlags(font_name, FontSettings.CURRENCY_FLAG);
+        }
+        if (Objects.equals(flag.toLowerCase(), "arrow")) {
+            LoadFlags(font_name, FontSettings.ARROW_FLAG);
+        }
+        if (Objects.equals(flag.toLowerCase(), "box")) {
+            LoadFlags(font_name, FontSettings.BOX_FLAG);
+        }
+    }
+
+    public void LoadCharacter(String font_name, char c) throws IOException, FontFormatException {
+        Font font = Font.createFont(Font.TRUETYPE_FONT, new File(TextUtils.INSTANCE.getDataDirectory() + File.separator + "fonts" + File.separator + font_name + ".ttf")).deriveFont(32f);
+        LoadCharacter(font_name, c, font);
+    }
+
+    private void LoadCharacter(String font_name, char c, Font font) throws IOException {
+        String dir_path = TextUtils.INSTANCE.getDataDirectory() + File.separator + "data" + File.separator + font_name;
+        var out = new File(dir_path + File.separator + "U" + String.format("%04X", (int) c) + ".png");
+        if (out.exists())
+            return;
+        var fs = loaded_font.get(font_name);
+        BufferedImage image = new BufferedImage(
+                fs.texture_size, fs.texture_size, BufferedImage.TYPE_INT_ARGB
+        );
+
+        Graphics2D g2d = image.createGraphics();
+        g2d.setFont(font);
+        g2d.setColor(Color.WHITE);
+
+        int charWidth = fs.fm.charWidth(c);
+        int x = (fs.texture_size - charWidth) / 2;
+        int y = (fs.texture_size + fs.fm.getAscent() - fs.fm.getDescent()) / 2;
+
+        g2d.drawString(String.valueOf(c), x, y);
+        g2d.dispose();
+        ImageIO.write(image, "PNG", out);
     }
 
     public boolean IsFontLoaded(String font_name, int flag) {

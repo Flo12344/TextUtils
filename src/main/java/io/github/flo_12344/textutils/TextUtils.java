@@ -1,14 +1,28 @@
 package io.github.flo_12344.textutils;
 
+import com.hypixel.hytale.assetstore.AssetRegistry;
+import com.hypixel.hytale.server.core.asset.HytaleAssetStore;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
+import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.server.core.util.io.FileUtil;
 import io.github.flo_12344.textutils.commands.*;
 import io.github.flo_12344.textutils.component.MovingComponent;
 import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
 import io.github.flo_12344.textutils.system.*;
+import io.github.flo_12344.textutils.utils.FontConfigManager;
 
 import javax.annotation.Nonnull;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class TextUtils extends JavaPlugin {
     public static TextUtils INSTANCE;
@@ -30,7 +44,7 @@ public class TextUtils extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new Remove3dTextCommand());
         this.getCommandRegistry().registerCommand(new List3dTextCommand());
 
-        this.getCommandRegistry().registerCommand(new Test2dCommand());
+//        this.getCommandRegistry().registerCommand(new Test2dCommand());
 //        this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, ExampleEvent::onPlayerReady);
 
         TextUtils3DTextComponent.init(this.getEntityStoreRegistry().registerComponent(TextUtils3DTextComponent.class, "TextUtils3DText", TextUtils3DTextComponent.CODEC));
@@ -58,6 +72,39 @@ public class TextUtils extends JavaPlugin {
 //                TextManager.SpawnText(text3dData.getPosition(), text3dData.getRotation(), world, text3dData.getText(), val, true);
 //            }
 //        });
+
+        List<String> folders = new ArrayList<>(List.of(new String[]{"data", "fonts"}));
+
+        folders.forEach(s -> {
+            String dir_path = getDataDirectory() + File.separator + s;
+            File dir = new File(dir_path);
+            if (dir.exists())
+                return;
+
+            boolean directoryCreated = dir.mkdirs();
+            if (!directoryCreated)
+                Universe.get().getLogger().atSevere().log("FAILED to create %s dir", s);
+        });
+
+        FontConfigManager.INSTANCE = new FontConfigManager();
+
+        File fonts = new File(getDataDirectory() + File.separator + "fonts");
+        var list = fonts.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".ttf");
+            }
+        });
+
+        Arrays.stream(list).toList().forEach(s -> {
+            try {
+                FontConfigManager.INSTANCE.Init(s.substring(0, s.lastIndexOf(".ttf")));
+                FontConfigManager.INSTANCE.LoadFlags(s.substring(0, s.lastIndexOf(".ttf")), FontConfigManager.FontSettings.BASIC_LATIN_FLAG);
+            } catch (IOException | FontFormatException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
     }
 
     @Override
