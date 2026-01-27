@@ -1,19 +1,15 @@
 package io.github.flo_12344.textutils.utils;
 
-import com.hypixel.hytale.common.util.StringUtil;
 import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.runtime.FontRuntimeManager;
-import org.bouncycastle.math.raw.Mod;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Objects;
 
 public class FontConfigManager {
@@ -89,10 +85,10 @@ public class FontConfigManager {
         dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve(FontRuntimeManager.RUNTIME_MODEL_DIR) + File.separator + font_name;
         File f = new File(dir_path);
         f.mkdirs();
-        dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve(FontRuntimeManager.MODEL_TEXTURE_PATH) + File.separator + font_name;
+        dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common").resolve(FontRuntimeManager.MODEL_TEXTURE_PATH) + File.separator + font_name;
         f = new File(dir_path);
         f.mkdirs();
-        ModelGenerator.genBaseCharacterModel(dir_path, potSize);
+        ModelGenerator.genCharBlockyModel(dir_path, potSize);
 
     }
 
@@ -158,7 +154,7 @@ public class FontConfigManager {
 
     private void LoadCharacter(String font_name, char c, Font font) throws IOException {
 //        String dir_path = TextUtils.INSTANCE.getDataDirectory() + File.separator + "data" + File.separator + font_name;
-        String dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve(FontRuntimeManager.MODEL_TEXTURE_PATH) + File.separator + font_name;
+        String dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common").resolve(FontRuntimeManager.MODEL_TEXTURE_PATH) + File.separator + font_name;
         var out = new File(dir_path + File.separator + "U" + String.format("%04X", (int) c) + ".png");
         if (out.exists())
             return;
@@ -179,7 +175,7 @@ public class FontConfigManager {
         g2d.dispose();
         ImageIO.write(image, "PNG", out);
         String model_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve(FontRuntimeManager.RUNTIME_MODEL_DIR) + File.separator + font_name;
-        ModelGenerator.genEntityModel(model_path, c, font_name);
+        ModelGenerator.genEntityModelAsset(model_path, c, font_name);
     }
 
     public boolean IsFontLoaded(String font_name, int flag) {
