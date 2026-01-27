@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 public class ModelGenerator {
     public static void genBaseCharacterModel(String out_dir, int size) throws IOException {
@@ -74,6 +75,31 @@ public class ModelGenerator {
                 "}";
 
         FileWriter out = new FileWriter(out_dir + File.separator + "base_character.blockymodel");
+        out.write(json);
+        out.close();
+    }
+
+    public static void genEntityModel(String out_dir, char c, String font_name) throws IOException {
+        String json = "{\n" +
+                "\"Model\": \"Items/" + font_name + "/base_model.blockymodel\",\n" +
+                "    \"Texture\": \"Items/" + font_name + "/U" + String.format("%04X", (int) c) + ".png\n" +
+                "    \"HitBox\": {\n" +
+                "        \"Max\": {\n" +
+                "            \"X\": 0.02,\n" +
+                "            \"Y\": 0.05,\n" +
+                "            \"Z\": 0.02\n" +
+                "        },\n" +
+                "        \"Min\": {\n" +
+                "            \"X\": 0,\n" +
+                "            \"Y\": 0,\n" +
+                "            \"Z\": 0\n" +
+                "        }\n" +
+                "    },\n" +
+                "    \"MinScale\": 0.25,\n" +
+                "    \"MaxScale\": 3" +
+                "}";
+
+        FileWriter out = new FileWriter(out_dir + File.separator + font_name + "_U" + String.format("%04X", (int) c) + ".json");
         out.write(json);
         out.close();
     }

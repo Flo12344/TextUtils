@@ -1,7 +1,9 @@
 package io.github.flo_12344.textutils;
 
 import com.hypixel.hytale.assetstore.AssetRegistry;
+import com.hypixel.hytale.common.util.StringUtil;
 import com.hypixel.hytale.server.core.asset.HytaleAssetStore;
+import com.hypixel.hytale.server.core.modules.collision.WorldUtil;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -20,6 +22,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -98,13 +103,25 @@ public class TextUtils extends JavaPlugin {
 
         Arrays.stream(list).toList().forEach(s -> {
             try {
-                FontConfigManager.INSTANCE.Init(s.substring(0, s.lastIndexOf(".ttf")));
-                FontConfigManager.INSTANCE.LoadFlags(s.substring(0, s.lastIndexOf(".ttf")), FontConfigManager.FontSettings.BASIC_LATIN_FLAG);
+                var font_name = s.substring(0, s.lastIndexOf(".ttf"));
+                FontConfigManager.INSTANCE.Init(font_name);
+                FontConfigManager.INSTANCE.LoadFlags(font_name, FontConfigManager.FontSettings.BASIC_LATIN_FLAG);
             } catch (IOException | FontFormatException e) {
                 throw new RuntimeException(e);
             }
         });
 
+        Path cwd = Paths.get("").toAbsolutePath();
+        Path cwdName = cwd.getFileName();
+        if (cwdName != null && "run".equalsIgnoreCase(cwdName.toString())) {
+            Universe.get().getLogger().atSevere().log("FAILED to create %s dir", cwd);
+            return;
+        }
+        Path runDir = cwd.resolve("run");
+        if (Files.isDirectory(runDir)) {
+            Universe.get().getLogger().atSevere().log("FAILED to create %s dir", runDir.toAbsolutePath());
+        }
+        Universe.get().getLogger().atSevere().log("FAILED to create %s dir", cwd);
     }
 
     @Override
