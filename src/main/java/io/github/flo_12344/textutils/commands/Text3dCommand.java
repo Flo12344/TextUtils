@@ -10,9 +10,7 @@ import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
-import com.hypixel.hytale.server.core.command.system.arguments.types.RelativeDoublePosition;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
-import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -38,6 +36,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
         addSubCommand(new HideCommand());
         addSubCommand(new ShowCommand());
         addSubCommand(new MoveCommand());
+        addSubCommand(new ResizeCommand());
     }
 
     @Override
@@ -62,6 +61,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
         OptionalArg<String> id;
         OptionalArg<String> font_id;
         OptionalArg<Vector3f> rotation;
+        OptionalArg<Float> size;
 
         protected NewCommand() {
             super("new", "Create a new holograms");
@@ -70,6 +70,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
             id = withOptionalArg("id", "", ArgTypes.STRING);
             font_id = withOptionalArg("font", "", ArgTypes.STRING);
             rotation = withOptionalArg("rotation", "", ArgTypes.ROTATION);
+            size = withOptionalArg("size", "", ArgTypes.FLOAT);
         }
 
         @Override
@@ -79,8 +80,9 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 content = content.substring(1, content.lastIndexOf("\""));
             final Vector3d pos = position.get(ctx).toVector3d();
             final Vector3f rot = ctx.getInput(rotation) == null ? new Vector3f() : rotation.get(ctx);
-            final String _id = ctx.getInput(id) == null ? UUID.randomUUID().toString() : id.get(ctx);
+            final String _id = ctx.provided(id) ? id.get(ctx) : UUID.randomUUID().toString();
             final String font = ctx.getInput(font_id) == null ? "" : font_id.get(ctx);
+            final float tsize = ctx.getInput(size) == null ? 1.0f : size.get(ctx);
             if (!font.isEmpty() && !FontManager.INSTANCE.IsFontLoaded(font)) {
                 ctx.sendMessage(Message.raw(String.format("Font %s doesn't exist.", font)));
                 return;
@@ -90,7 +92,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 return;
             }
 
-            TextManager.SpawnText(pos, rot, world, content, _id, font);
+            TextManager.SpawnText(pos, rot, world, content, _id, font, tsize);
         }
     }
 
@@ -175,6 +177,32 @@ public class Text3dCommand extends AbstractPlayerCommand {
                     t.setRotation(transform.getRotation());
                     text_pos++;
                 }
+            });
+        }
+    }
+
+    public static class ResizeCommand extends AbstractPlayerCommand {
+        RequiredArg<String> label;
+        RequiredArg<Float> size;
+
+        public ResizeCommand() {
+            super("resize", "");
+            label = withRequiredArg("label", "", ArgTypes.STRING);
+            size = withRequiredArg("size", "", ArgTypes.FLOAT);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            var label_str = label.get(ctx);
+            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+                return;
+            }
+
+            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
+            world.execute(() -> {
+                var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+                textUtilsEntity.setSize(size.get(ctx));
             });
         }
     }

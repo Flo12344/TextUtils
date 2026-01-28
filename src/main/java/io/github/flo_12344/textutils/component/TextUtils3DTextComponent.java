@@ -26,6 +26,9 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
                     .append(new KeyedCodec<>("Visible", Codec.BOOLEAN),
                             (c, v) -> c.visible = v,
                             c -> c.visible).add()
+                    .append(new KeyedCodec<>("Size", Codec.FLOAT),
+                            (c, v) -> c.size = v,
+                            c -> c.size).add()
                     .build();
 
     private static ComponentType<EntityStore, TextUtils3DTextComponent> TYPE;
@@ -33,6 +36,7 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
     private String font_name;
     private String text;
     private String id;
+    private float size = 1.0f;
     private boolean visible = true;
     private CopyOnWriteArrayList<UUID> text_entities = new CopyOnWriteArrayList<>();
 
@@ -48,10 +52,11 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
         TYPE = type;
     }
 
-    public TextUtils3DTextComponent(String font_name, String text, String id) {
+    public TextUtils3DTextComponent(String font_name, String text, String id, float size) {
         this.font_name = font_name;
         this.text = text;
         this.id = id;
+        this.size = size;
         edited = true;
     }
 
@@ -86,6 +91,15 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
         this.edited = true;
     }
 
+    public float getSize() {
+        return size;
+    }
+
+    public void setSize(float size) {
+        this.size = size;
+        this.edited = true;
+    }
+
     public String getId() {
         return id;
     }
@@ -105,6 +119,6 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
     @NullableDecl
     @Override
     public Component<EntityStore> clone() {
-        return new TextUtils3DTextComponent(font_name, text, getId());
+        return new TextUtils3DTextComponent(font_name, text, getId(), size);
     }
 }
