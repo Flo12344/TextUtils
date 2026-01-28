@@ -55,12 +55,12 @@ public class TextUtils extends JavaPlugin {
 
         String dir_path = getDataDirectory() + File.separator + "fonts";
         File dir = new File(dir_path);
-        if (dir.exists())
-            return;
-
-        boolean directoryCreated = dir.mkdirs();
-        if (!directoryCreated)
-            Universe.get().getLogger().atSevere().log("FAILED to create fonts dir");
+        if (!dir.exists()) {
+            boolean directoryCreated = dir.mkdirs();
+            if (!directoryCreated) {
+                Universe.get().getLogger().atSevere().log("FAILED to create fonts dir");
+            }
+        }
 
         fontRuntimeManager = new FontRuntimeManager();
         fontRuntimeManager.registerRuntimePack();
