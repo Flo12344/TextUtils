@@ -42,9 +42,9 @@ public class TextUtils extends JavaPlugin {
 
         TextUtils3DTextComponent.init(this.getEntityStoreRegistry().registerComponent(TextUtils3DTextComponent.class, "TextUtils3DText", TextUtils3DTextComponent.CODEC));
         Text3dDeleterComponent.init(this.getEntityStoreRegistry().registerComponent(Text3dDeleterComponent.class, "Text3dDeleter", Text3dDeleterComponent.CODEC));
-        this.getEntityStoreRegistry().registerSystem(new EditText3DSystem());
-        this.getEntityStoreRegistry().registerSystem(new Text3dSpawned());
-        this.getEntityStoreRegistry().registerSystem(new DeleterText3dSystem());
+        this.getEntityStoreRegistry().registerSystem(new Text3dSystem.EditText3DSystem());
+        this.getEntityStoreRegistry().registerSystem(new Text3dSystem.Text3dSpawned());
+        this.getEntityStoreRegistry().registerSystem(new Text3dSystem.DeleterText3dSystem());
 
 
     }

@@ -1,0 +1,162 @@
+package io.github.flo_12344.textutils.system;
+
+import com.hypixel.hytale.component.*;
+import com.hypixel.hytale.component.query.Query;
+import com.hypixel.hytale.component.system.HolderSystem;
+import com.hypixel.hytale.component.system.RefChangeSystem;
+import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
+import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.server.core.asset.type.model.config.Model;
+import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
+import com.hypixel.hytale.server.core.entity.UUIDComponent;
+import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
+import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
+import com.hypixel.hytale.server.core.modules.entity.component.PersistentModel;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
+import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
+import io.github.flo_12344.textutils.utils.FontManager;
+import io.github.flo_12344.textutils.utils.TextManager;
+import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+
+import java.util.Objects;
+
+public class Text3dSystem {
+    public static class DeleterText3dSystem extends RefChangeSystem<EntityStore, Text3dDeleterComponent> {
+        @NullableDecl
+        @Override
+        public Query<EntityStore> getQuery() {
+            return Query.and(TextUtils3DTextComponent.getComponentType(), Text3dDeleterComponent.getComponentType());
+        }
+
+        @NonNullDecl
+        @Override
+        public ComponentType<EntityStore, Text3dDeleterComponent> componentType() {
+            return Text3dDeleterComponent.getComponentType();
+        }
+
+        @Override
+        public void onComponentAdded(@NonNullDecl Ref<EntityStore> ref, @NonNullDecl Text3dDeleterComponent textComponent, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
+            var comp = commandBuffer.getComponent(ref, TextUtils3DTextComponent.getComponentType());
+            for (var c : comp.getText_entities()) {
+                commandBuffer.removeEntity(store.getExternalData().getWorld().getEntityRef(c), RemoveReason.REMOVE);
+            }
+            TextManager.textUtilsEntity.remove(comp.getId());
+            commandBuffer.removeEntity(ref, RemoveReason.REMOVE);
+        }
+
+        @Override
+        public void onComponentSet(@NonNullDecl Ref<EntityStore> ref, @NullableDecl Text3dDeleterComponent textComponent, @NonNullDecl Text3dDeleterComponent t1, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
+
+        }
+
+        @Override
+        public void onComponentRemoved(@NonNullDecl Ref<EntityStore> ref, @NonNullDecl Text3dDeleterComponent textComponent, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
+        }
+    }
+
+    public static class Text3dSpawned extends HolderSystem<EntityStore> {
+        @Override
+        public void onEntityAdd(@NonNullDecl Holder<EntityStore> holder, @NonNullDecl AddReason addReason, @NonNullDecl Store<EntityStore> store) {
+            var textUtils = holder.getComponent(TextUtils3DTextComponent.getComponentType());
+            var uuid = holder.getComponent(UUIDComponent.getComponentType()).getUuid();
+            if (!TextManager.textUtilsEntity.containsKey(textUtils.getId())) {
+                TextManager.textUtilsEntity.put(textUtils.getId(), uuid);
+            }
+
+
+        }
+
+        @Override
+        public void onEntityRemoved(@NonNullDecl Holder<EntityStore> holder, @NonNullDecl RemoveReason removeReason, @NonNullDecl Store<EntityStore> store) {
+            var textUtils = holder.getComponent(TextUtils3DTextComponent.getComponentType());
+            if (!TextManager.textUtilsEntity.containsKey(textUtils.getId())) {
+                TextManager.textUtilsEntity.remove(textUtils.getId());
+            }
+        }
+
+        @NullableDecl
+        @Override
+        public Query<EntityStore> getQuery() {
+            return TextUtils3DTextComponent.getComponentType();
+        }
+    }
+
+    public static class EditText3DSystem extends EntityTickingSystem<EntityStore> {
+
+        @Override
+        public void tick(float v, int i, @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> commandBuffer) {
+            var textUtilsEntity = archetypeChunk.getComponent(i, TextUtils3DTextComponent.getComponentType());
+            if (textUtilsEntity != null && textUtilsEntity.isEdited()) {
+                textUtilsEntity.setEdited(false);
+                TransformComponent transform = archetypeChunk.getComponent(i, TransformComponent.getComponentType());
+                if (transform == null)
+                    return;
+
+                var list = textUtilsEntity.getText_entities();
+                var world = store.getExternalData().getWorld();
+
+                if (!list.isEmpty()) {
+                    for (var c : list) {
+                        commandBuffer.removeEntity(world.getEntityRef(c), RemoveReason.REMOVE);
+                    }
+                    list.clear();
+                }
+                if (!textUtilsEntity.isVisible())
+                    return;
+                int text_pos = 0;
+                var charArray = textUtilsEntity.getText().toCharArray();
+                float width;
+                if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
+                    width = 0.1f;
+                } else {
+                    width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
+                }
+
+                for (char c : charArray) {
+                    TransformComponent chara_transform = transform.clone();
+                    Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
+                    Vector3d offset = right.scale((double) -charArray.length / 2 * width + text_pos * width);
+
+                    chara_transform.getPosition().add(offset);
+
+                    Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
+                    ModelAsset modelAsset;
+                    if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
+                        modelAsset = ModelAsset.getAssetMap().getAsset("Char" + Objects.toString((int) c));
+                    } else {
+                        modelAsset = ModelAsset.getAssetMap().getAsset(FontManager.getCharFileAsString(c, textUtilsEntity.getFont_name()));
+                    }
+
+
+                    if (modelAsset == null) {
+                        continue;
+                    }
+                    Model model = Model.createScaledModel(modelAsset, 1.0f);
+
+                    var uuid = holder.ensureAndGetComponent(UUIDComponent.getComponentType()).getUuid();
+                    holder.addComponent(TransformComponent.getComponentType(), chara_transform);
+                    holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
+                    holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
+                    holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
+                    holder.addComponent(Intangible.getComponentType(), Intangible.INSTANCE);
+                    commandBuffer.addEntity(holder, AddReason.SPAWN);
+                    list.add(uuid);
+                    text_pos++;
+                }
+
+
+            }
+        }
+
+
+        @NullableDecl
+        @Override
+        public Query<EntityStore> getQuery() {
+            return TextUtils3DTextComponent.getComponentType();
+        }
+    }
+}
