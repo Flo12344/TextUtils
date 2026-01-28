@@ -52,63 +52,18 @@ public class TextUtils extends JavaPlugin {
     @Override
     protected void start() {
         super.start();
-//        var entities = config.get().getTextEntity();
-//
-//        this.getEventRegistry().register(EventPriority.LAST, AllWorldsLoadedEvent.class, allWorldsLoadedEvent -> {
-//            for (Iterator<String> it = entities.keys().asIterator(); it.hasNext(); ) {
-//                var val = it.next();
-//                var text3dData = entities.get(val);
-//                var world = Universe.get().getWorld(text3dData.getWorld());
-//                TextManager.SpawnText(text3dData.getPosition(), text3dData.getRotation(), world, text3dData.getText(), val, true);
-//            }
-//        });
 
-        List<String> folders = new ArrayList<>(List.of(new String[]{"data", "fonts"}));
+        String dir_path = getDataDirectory() + File.separator + "fonts";
+        File dir = new File(dir_path);
+        if (dir.exists())
+            return;
 
-        folders.forEach(s -> {
-            String dir_path = getDataDirectory() + File.separator + s;
-            File dir = new File(dir_path);
-            if (dir.exists())
-                return;
+        boolean directoryCreated = dir.mkdirs();
+        if (!directoryCreated)
+            Universe.get().getLogger().atSevere().log("FAILED to create fonts dir");
 
-            boolean directoryCreated = dir.mkdirs();
-            if (!directoryCreated)
-                Universe.get().getLogger().atSevere().log("FAILED to create %s dir", s);
-        });
-
-//        FontManager.INSTANCE = new FontManager();
-
-//        File fonts = new File(getDataDirectory() + File.separator + "fonts");
-//        var list = fonts.list(new FilenameFilter() {
-//            @Override
-//            public boolean accept(File dir, String name) {
-//                return name.endsWith(".ttf");
-//            }
-//        });
-
-//        Arrays.stream(list).toList().forEach(s -> {
-//            try {
-//                var font_name = s.substring(0, s.lastIndexOf(".ttf"));
-//                FontConfigManager.INSTANCE.Init(font_name);
-//                FontConfigManager.INSTANCE.LoadFlags(font_name, FontConfigManager.FontSettings.BASIC_LATIN_FLAG);
-//            } catch (IOException | FontFormatException e) {
-//                throw new RuntimeException(e);
-//            }
-//        });
         fontRuntimeManager = new FontRuntimeManager();
         fontRuntimeManager.registerRuntimePack();
-
-        Path cwd = Paths.get("").toAbsolutePath();
-        Path cwdName = cwd.getFileName();
-        if (cwdName != null && "run".equalsIgnoreCase(cwdName.toString())) {
-            Universe.get().getLogger().atSevere().log("FAILED to create %s dir", cwd);
-            return;
-        }
-        Path runDir = cwd.resolve("run");
-        if (Files.isDirectory(runDir)) {
-            Universe.get().getLogger().atSevere().log("FAILED to create %s dir", runDir.toAbsolutePath());
-        }
-        Universe.get().getLogger().atSevere().log("FAILED to create %s dir", cwd);
     }
 
     @Override
