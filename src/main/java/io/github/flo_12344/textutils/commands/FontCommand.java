@@ -1,0 +1,110 @@
+package io.github.flo_12344.textutils.commands;
+
+import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.command.system.AbstractCommand;
+import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
+import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
+import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
+import com.hypixel.hytale.server.core.command.system.arguments.types.ListArgumentType;
+import io.github.flo_12344.textutils.TextUtils;
+import io.github.flo_12344.textutils.utils.FontConfig;
+import io.github.flo_12344.textutils.utils.FontManager;
+import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+
+import java.awt.*;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+public class FontCommand extends AbstractCommand {
+    public FontCommand() {
+        super("font", "", false);
+        addSubCommand(new ListCommand());
+        addSubCommand(new InitCommand());
+        addSubCommand(new RangeCommand());
+    }
+
+    @NullableDecl
+    @Override
+    protected CompletableFuture<Void> execute(@NonNullDecl CommandContext ctx) {
+        return null;
+    }
+
+    public static class ListCommand extends AbstractCommand {
+        protected ListCommand() {
+            super("list", "", false);
+        }
+
+        @NullableDecl
+        @Override
+        protected CompletableFuture<Void> execute(@NonNullDecl CommandContext ctx) {
+            FontManager.INSTANCE.getLoaded_font().forEach((s, fontSettings) -> {
+                String out = s + " -> { Range loaded :" + FontConfig.getLoadedRangesAsString(fontSettings.loaded) + "}";
+                ctx.sendMessage(Message.raw(out));
+            });
+            return null;
+        }
+    }
+
+    public static class InitCommand extends AbstractCommand {
+        RequiredArg<String> font_name;
+        OptionalArg<String> font_id;
+        OptionalArg<Float> size;
+
+        protected InitCommand() {
+            super("init", "init a font from the font folder of TextUtils");
+            font_name = withRequiredArg("font_name", "Font file name with or without extension", ArgTypes.STRING);
+            font_id = withOptionalArg("font_id", "Name used to access the font", ArgTypes.STRING);
+            size = withOptionalArg("size", "", ArgTypes.FLOAT);
+        }
+
+        @NullableDecl
+        @Override
+        protected CompletableFuture<Void> execute(@NonNullDecl CommandContext ctx) {
+            var font = font_name.get(ctx).replaceAll("\"", "");
+            var id = font_id.get(ctx) == null ? font.replaceAll("\\.ttf|\\.otf", "").replaceAll(" ", "_") : font_id.get(ctx);
+            var _size = size.provided(ctx) ? size.get(ctx) : 32f;
+
+            try {
+                if (!FontManager.INSTANCE.Init(font, id, _size)) {
+                    ctx.sendMessage(Message.raw("Failed to load %s".formatted(font_name)));
+                }
+            } catch (IOException | FontFormatException e) {
+                ctx.sendMessage(Message.raw(e.getMessage()));
+            }
+            return null;
+        }
+    }
+
+    public static class RangeCommand extends AbstractCommand {
+        RequiredArg<String> font_id;
+        RequiredArg<List<String>> range_name;
+
+        protected RangeCommand() {
+            super("range", "Generate a glyphs for the specified range and font");
+            font_id = withRequiredArg("font_id", "", ArgTypes.STRING);
+            range_name = withRequiredArg("range_name", "latin|latin_1|latin_ab|punct|currency|arrow|box", new ListArgumentType<>(ArgTypes.STRING));
+        }
+
+        @NullableDecl
+        @Override
+        protected CompletableFuture<Void> execute(@NonNullDecl CommandContext ctx) {
+            if (!FontManager.INSTANCE.IsFontLoaded(font_id.get(ctx))) {
+                ctx.sendMessage(Message.raw("Font not found"));
+            }
+            try {
+                FontManager.INSTANCE.LoadFlags(font_id.get(ctx), range_name.get(ctx));
+                TextUtils.INSTANCE.fontRuntimeManager.reloadAssets();
+
+            } catch (IOException | FontFormatException e) {
+                ctx.sendMessage(Message.raw(e.getMessage()));
+            }
+            return null;
+        }
+    }
+
+    public static class RemoveCommand {
+    }
+}

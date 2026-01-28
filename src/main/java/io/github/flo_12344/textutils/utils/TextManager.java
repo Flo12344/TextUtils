@@ -21,23 +21,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class TextManager {
     public static ConcurrentHashMap<String, UUID> textUtilsEntity = new ConcurrentHashMap<>();
 
-    public static void SpawnText(Vector3d pos, Vector3f rot, @Nonnull World world, String text, String _label) {
+    public static void SpawnText(Vector3d pos, Vector3f rot, @Nonnull World world, String text, String _label, String font) {
         world.execute(() -> {
             Store<EntityStore> store = world.getEntityStore().getStore();
             Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
-            
+
             TransformComponent transform = new TransformComponent(pos, rot);
 
             holder.addComponent(TransformComponent.getComponentType(), transform);
             holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
             holder.ensureComponent(UUIDComponent.getComponentType());
             holder.addComponent(Intangible.getComponentType(), Intangible.INSTANCE);
-//            TextManager.textUtilsEntity.put(_label, holder.ensureAndGetComponent(UUIDComponent.getComponentType()).getUuid());
             store.addComponent(store.addEntity(holder, AddReason.SPAWN),
                     TextUtils3DTextComponent.getComponentType(),
-                    new TextUtils3DTextComponent("", text, _label));
-//            if (!from_load)
-//                TextUtils.INSTANCE.config.get().AddText(_label, new Text3dData(pos, rot, text, world.getName()));
+                    new TextUtils3DTextComponent(font, text, _label));
         });
     }
 }

@@ -19,6 +19,9 @@ public class TestPages extends BasicCustomUIPage {
 
     @Override
     public void build(UICommandBuilder uiCommandBuilder) {
+        uiCommandBuilder.append("Pages/main.ui");
+        uiCommandBuilder.appendInline("#Main", Test2dCommand.test);
+//        uiCommandBuilder.set()
 //        try {
 //            Field privateField = UICommandBuilder.class.getDeclaredField("commands");
 //            privateField.setAccessible(true);

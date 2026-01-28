@@ -1,0 +1,254 @@
+package io.github.flo_12344.textutils.commands;
+
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.math.vector.Vector3i;
+import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
+import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
+import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
+import com.hypixel.hytale.server.core.command.system.arguments.types.RelativeDoublePosition;
+import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
+import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
+import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
+import io.github.flo_12344.textutils.utils.FontManager;
+import io.github.flo_12344.textutils.utils.TextManager;
+import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+
+import java.util.Objects;
+import java.util.UUID;
+
+public class Text3dCommand extends AbstractPlayerCommand {
+
+
+    public Text3dCommand() {
+        super("text3d", "");
+        addSubCommand(new NewCommand());
+        addSubCommand(new ListCommand());
+        addSubCommand(new EditCommand());
+        addSubCommand(new RemoveCommand());
+        addSubCommand(new HideCommand());
+        addSubCommand(new ShowCommand());
+        addSubCommand(new MoveCommand());
+    }
+
+    @Override
+    protected void execute(@NonNullDecl CommandContext commandContext, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+
+    }
+
+    public static class ListCommand extends AbstractPlayerCommand {
+        protected ListCommand() {
+            super("list", "List all holograms");
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext commandContext, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+
+        }
+    }
+
+    public static class NewCommand extends AbstractPlayerCommand {
+        RequiredArg<Vector3i> position;
+        RequiredArg<String> text;
+        OptionalArg<String> id;
+        OptionalArg<String> font_id;
+        OptionalArg<Vector3f> rotation;
+
+        protected NewCommand() {
+            super("new", "Create a new holograms");
+            position = withRequiredArg("position", "", ArgTypes.VECTOR3I);
+            text = withRequiredArg("text", "", ArgTypes.STRING);
+            id = withOptionalArg("id", "", ArgTypes.STRING);
+            font_id = withOptionalArg("font", "", ArgTypes.STRING);
+            rotation = withOptionalArg("rotation", "", ArgTypes.ROTATION);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            String content = text.get(ctx);
+            if (content.startsWith("\""))
+                content = content.substring(1, content.lastIndexOf("\""));
+            final Vector3d pos = position.get(ctx).toVector3d();
+            final Vector3f rot = ctx.getInput(rotation) == null ? new Vector3f() : rotation.get(ctx);
+            final String _id = ctx.getInput(id) == null ? UUID.randomUUID().toString() : id.get(ctx);
+            final String font = ctx.getInput(font_id) == null ? "" : font_id.get(ctx);
+            if (!font.isEmpty() && !FontManager.INSTANCE.IsFontLoaded(font)) {
+                ctx.sendMessage(Message.raw(String.format("Font %s doesn't exist.", font)));
+                return;
+            }
+            if (TextManager.textUtilsEntity.containsKey(_id)) {
+                ctx.sendMessage(Message.raw(String.format("TextUtilsEntity with label %s already exist.", _id)));
+                return;
+            }
+
+            TextManager.SpawnText(pos, rot, world, content, _id, font);
+        }
+    }
+
+    public static class EditCommand extends AbstractPlayerCommand {
+        RequiredArg<String> label;
+        RequiredArg<String> text;
+        OptionalArg<String> font_id;
+
+        public EditCommand() {
+            super("edit", "");
+            label = withRequiredArg("label", "", ArgTypes.STRING);
+            text = withRequiredArg("text", "", ArgTypes.STRING);
+            font_id = withOptionalArg("font", "", ArgTypes.STRING);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            var label_str = label.get(ctx);
+            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+                return;
+            }
+            final String font = ctx.getInput(font_id) == null ? "" : font_id.get(ctx);
+            if (!font.isEmpty() && !FontManager.INSTANCE.IsFontLoaded(font)) {
+                ctx.sendMessage(Message.raw(String.format("Font %s doesn't exist.", font)));
+                return;
+            }
+
+            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
+            world.execute(() -> {
+                var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+                txt.setText(text.get(ctx));
+                if (!font.isEmpty()) {
+                    txt.setFont_name(font);
+                }
+            });
+        }
+    }
+
+    public static class MoveCommand extends AbstractPlayerCommand {
+        RequiredArg<String> label;
+        RequiredArg<Float> x, y, z;
+
+        public MoveCommand() {
+            super("move", "");
+            label = withRequiredArg("label", "", ArgTypes.STRING);
+            x = withRequiredArg("x", "", ArgTypes.FLOAT);
+            y = withRequiredArg("y", "", ArgTypes.FLOAT);
+            z = withRequiredArg("z", "", ArgTypes.FLOAT);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            var label_str = label.get(ctx);
+            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+                return;
+            }
+
+            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
+            world.execute(() -> {
+                var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+                TransformComponent transform = store.getComponent(text_entity, TransformComponent.getComponentType());
+                if (transform == null)
+                    return;
+                transform.getPosition().add(new Vector3d(x.get(ctx), y.get(ctx), z.get(ctx)));
+                int text_pos = 0;
+                float width;
+                if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
+                    width = 0.1f;
+                } else {
+                    width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
+                }
+                var arr = textUtilsEntity.getText_entities();
+                var size = arr.size();
+                for (var uuid : arr) {
+                    var c = store.getExternalData().getRefFromUUID(uuid);
+                    Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
+                    Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
+                    TransformComponent t = store.getComponent(c, TransformComponent.getComponentType());
+                    t.setPosition(offset.add(transform.getPosition()));
+                    t.setRotation(transform.getRotation());
+                    text_pos++;
+                }
+            });
+        }
+    }
+
+    public static class RemoveCommand extends AbstractPlayerCommand {
+        RequiredArg<String> label;
+
+        public RemoveCommand() {
+            super("remove", "");
+            label = withRequiredArg("label", "", ArgTypes.STRING);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            var label_str = label.get(ctx);
+            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+                return;
+            }
+            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
+            world.execute(() -> {
+                world.getEntityStore().getStore().addComponent(text_entity, Text3dDeleterComponent.getComponentType());
+            });
+        }
+    }
+
+    public static class HideCommand extends AbstractPlayerCommand {
+        RequiredArg<String> label;
+
+        public HideCommand() {
+            super("hide", "");
+            label = withRequiredArg("id", "", ArgTypes.STRING);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            var label_str = label.get(ctx);
+            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+                return;
+            }
+
+            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
+            world.execute(() -> {
+                var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+                txt.setVisible(false);
+            });
+            ctx.sendMessage(Message.raw(String.format("TextUtilsEntity %s hidden", label_str)));
+        }
+    }
+
+    public static class ShowCommand extends AbstractPlayerCommand {
+        RequiredArg<String> label;
+
+        public ShowCommand() {
+            super("show", "");
+            label = withRequiredArg("label", "", ArgTypes.STRING);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            var label_str = label.get(ctx);
+            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+                return;
+            }
+
+            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
+            world.execute(() -> {
+                var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+                txt.setVisible(true);
+            });
+            ctx.sendMessage(Message.raw(String.format("TextUtilsEntity %s now visible", label_str)));
+        }
+    }
+
+}

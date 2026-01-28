@@ -23,6 +23,9 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
                     .append(new KeyedCodec<>("TextId", Codec.STRING),
                             (c, v) -> c.id = v,
                             c -> c.id).add()
+                    .append(new KeyedCodec<>("Visible", Codec.BOOLEAN),
+                            (c, v) -> c.visible = v,
+                            c -> c.visible).add()
                     .build();
 
     private static ComponentType<EntityStore, TextUtils3DTextComponent> TYPE;
@@ -30,6 +33,7 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
     private String font_name;
     private String text;
     private String id;
+    private boolean visible = true;
     private CopyOnWriteArrayList<UUID> text_entities = new CopyOnWriteArrayList<>();
 
     public static ComponentType<EntityStore, TextUtils3DTextComponent> getComponentType() {
@@ -71,6 +75,15 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
     public void setFont_name(String font_name) {
         this.font_name = font_name;
         edited = true;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+        this.edited = true;
     }
 
     public String getId() {

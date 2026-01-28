@@ -1,65 +1,50 @@
 package io.github.flo_12344.textutils;
 
-import com.hypixel.hytale.assetstore.AssetRegistry;
-import com.hypixel.hytale.common.util.StringUtil;
-import com.hypixel.hytale.server.core.asset.HytaleAssetStore;
-import com.hypixel.hytale.server.core.modules.collision.WorldUtil;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.Universe;
-import com.hypixel.hytale.server.core.util.io.FileUtil;
+import com.hypixel.hytale.server.core.util.Config;
 import io.github.flo_12344.textutils.commands.*;
-import io.github.flo_12344.textutils.component.MovingComponent;
 import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
+import io.github.flo_12344.textutils.runtime.FontRuntimeManager;
 import io.github.flo_12344.textutils.system.*;
-import io.github.flo_12344.textutils.utils.FontConfigManager;
+import io.github.flo_12344.textutils.utils.FontManager;
 
 import javax.annotation.Nonnull;
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class TextUtils extends JavaPlugin {
     public static TextUtils INSTANCE;
-//    public final Config<TextConfig> config;
+    public final Config<FontManager> FONT_MANAGER;
+    public FontRuntimeManager fontRuntimeManager;
 
     public TextUtils(@Nonnull JavaPluginInit init) {
         super(init);
         INSTANCE = this;
-//        this.config = this.withConfig("TextConfig", TextConfig.CODEC);
+        this.FONT_MANAGER = this.withConfig("TextConfig", FontManager.CODEC);
     }
 
     @Override
     protected void setup() {
-//        this.config.save();
+        this.FONT_MANAGER.save();
 
 
-        this.getCommandRegistry().registerCommand(new New3dTextCommand());
-        this.getCommandRegistry().registerCommand(new Move3dTextCommand());
-        this.getCommandRegistry().registerCommand(new Remove3dTextCommand());
-        this.getCommandRegistry().registerCommand(new List3dTextCommand());
+        this.getCommandRegistry().registerCommand(new FontCommand());
+        this.getCommandRegistry().registerCommand(new Text3dCommand());
 
-//        this.getCommandRegistry().registerCommand(new Test2dCommand());
-//        this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, ExampleEvent::onPlayerReady);
+        this.getCommandRegistry().registerCommand(new Test2dCommand());
 
         TextUtils3DTextComponent.init(this.getEntityStoreRegistry().registerComponent(TextUtils3DTextComponent.class, "TextUtils3DText", TextUtils3DTextComponent.CODEC));
         Text3dDeleterComponent.init(this.getEntityStoreRegistry().registerComponent(Text3dDeleterComponent.class, "Text3dDeleter", Text3dDeleterComponent.CODEC));
-//        MovingComponent.init(this.getEntityStoreRegistry().registerComponent(MovingComponent.class, "Text3dMoving", MovingComponent.CODEC));
         this.getEntityStoreRegistry().registerSystem(new EditText3DSystem());
         this.getEntityStoreRegistry().registerSystem(new Text3dSpawned());
         this.getEntityStoreRegistry().registerSystem(new DeleterText3dSystem());
-//        this.getEntityStoreRegistry().registerSystem(new SetupMove3dTextSystem());
-//        this.getEntityStoreRegistry().registerSystem(new MoveText3dUpdateSystem());
 
 
     }
@@ -91,25 +76,27 @@ public class TextUtils extends JavaPlugin {
                 Universe.get().getLogger().atSevere().log("FAILED to create %s dir", s);
         });
 
-        FontConfigManager.INSTANCE = new FontConfigManager();
+//        FontManager.INSTANCE = new FontManager();
 
-        File fonts = new File(getDataDirectory() + File.separator + "fonts");
-        var list = fonts.list(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".ttf");
-            }
-        });
+//        File fonts = new File(getDataDirectory() + File.separator + "fonts");
+//        var list = fonts.list(new FilenameFilter() {
+//            @Override
+//            public boolean accept(File dir, String name) {
+//                return name.endsWith(".ttf");
+//            }
+//        });
 
-        Arrays.stream(list).toList().forEach(s -> {
-            try {
-                var font_name = s.substring(0, s.lastIndexOf(".ttf"));
-                FontConfigManager.INSTANCE.Init(font_name);
-                FontConfigManager.INSTANCE.LoadFlags(font_name, FontConfigManager.FontSettings.BASIC_LATIN_FLAG);
-            } catch (IOException | FontFormatException e) {
-                throw new RuntimeException(e);
-            }
-        });
+//        Arrays.stream(list).toList().forEach(s -> {
+//            try {
+//                var font_name = s.substring(0, s.lastIndexOf(".ttf"));
+//                FontConfigManager.INSTANCE.Init(font_name);
+//                FontConfigManager.INSTANCE.LoadFlags(font_name, FontConfigManager.FontSettings.BASIC_LATIN_FLAG);
+//            } catch (IOException | FontFormatException e) {
+//                throw new RuntimeException(e);
+//            }
+//        });
+        fontRuntimeManager = new FontRuntimeManager();
+        fontRuntimeManager.registerRuntimePack();
 
         Path cwd = Paths.get("").toAbsolutePath();
         Path cwdName = cwd.getFileName();
@@ -126,7 +113,7 @@ public class TextUtils extends JavaPlugin {
 
     @Override
     protected void shutdown() {
-//        this.config.save();
+        this.FONT_MANAGER.save();
         super.shutdown();
     }
 }
