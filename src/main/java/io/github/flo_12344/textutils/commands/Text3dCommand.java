@@ -37,6 +37,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
         addSubCommand(new ShowCommand());
         addSubCommand(new MoveCommand());
         addSubCommand(new ResizeCommand());
+        addSubCommand(new TrackCommand());
     }
 
     @Override
@@ -276,6 +277,34 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 txt.setVisible(true);
             });
             ctx.sendMessage(Message.raw(String.format("TextUtilsEntity %s now visible", label_str)));
+        }
+    }
+
+    public static class TrackCommand extends AbstractTargetEntityCommand {
+        RequiredArg<String> label;
+        OptionalArg<Vector3i> offset;
+
+        public TrackCommand() {
+            super("track", "");
+            label = withRequiredArg("id", "", ArgTypes.STRING);
+            offset = withOptionalArg("offset", "", ArgTypes.VECTOR3I);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl ObjectList<Ref<EntityStore>> objectList, @NonNullDecl World world, @NonNullDecl Store<EntityStore> store) {
+            var label_str = label.get(ctx);
+
+            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label_str)));
+                return;
+            }
+
+            if (objectList.isEmpty())
+                return;
+            var uuid = store.getComponent(objectList.getFirst(), UUIDComponent.getComponentType());
+
+            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
+            store.addComponent(text_entity, Text3dTrackerComponent.getComponentType(), new Text3dTrackerComponent(uuid.getUuid(), offset.get(ctx)));
         }
     }
 

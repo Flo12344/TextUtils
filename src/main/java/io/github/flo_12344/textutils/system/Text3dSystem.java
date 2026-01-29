@@ -14,6 +14,7 @@ import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
+import io.github.flo_12344.textutils.component.Text3dTrackerComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
 import io.github.flo_12344.textutils.utils.FontManager;
 import io.github.flo_12344.textutils.utils.TextManager;
@@ -170,6 +171,62 @@ public class Text3dSystem {
         @Override
         public Query<EntityStore> getQuery() {
             return TextUtils3DTextComponent.getComponentType();
+        }
+    }
+
+    public static class TrackerText3DSystem extends EntityTickingSystem<EntityStore> {
+
+        @Override
+        public void tick(float v, int i, @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> cbf) {
+            var ref = archetypeChunk.getReferenceTo(i);
+            var textUtilsEntity = cbf.getComponent(ref, TextUtils3DTextComponent.getComponentType());
+            var tracker = archetypeChunk.getComponent(i, Text3dTrackerComponent.getComponentType());
+            TransformComponent transform = archetypeChunk.getComponent(i, TransformComponent.getComponentType());
+            if (transform == null)
+                return;
+
+            var target = store.getExternalData().getWorld().getEntityRef(tracker.getTracked());
+            if (target == null) {
+                cbf.removeComponent(ref, Text3dTrackerComponent.getComponentType());
+                return;
+            }
+            TransformComponent target_trsf = cbf.getComponent(target, TransformComponent.getComponentType());
+            HeadRotation head = cbf.getComponent(target, HeadRotation.getComponentType());
+
+            if (head != null) {
+                transform.setRotation(head.getRotation());
+                transform.getRotation().add(0, TrigMathUtil.PI, 0);
+            }
+
+            transform.setPosition(target_trsf.getPosition());
+            transform.getPosition().add(tracker.getOffset());
+            int text_pos = 0;
+            float width;
+            if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
+                width = 0.1f;
+            } else {
+                width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
+            }
+            var arr = textUtilsEntity.getText_entities();
+            var size = arr.size();
+            for (var uuid : arr) {
+                var c = store.getExternalData().getRefFromUUID(uuid);
+                Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
+                Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
+                TransformComponent t = store.getComponent(c, TransformComponent.getComponentType());
+                t.setPosition(offset.add(transform.getPosition()));
+                t.setRotation(transform.getRotation());
+                text_pos++;
+            }
+
+
+        }
+
+
+        @NullableDecl
+        @Override
+        public Query<EntityStore> getQuery() {
+            return Text3dTrackerComponent.getComponentType();
         }
     }
 }
