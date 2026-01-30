@@ -38,7 +38,6 @@ public class TextUtils extends JavaPlugin {
     protected void setup() {
         this.FONT_MANAGER.save();
 
-
         this.getCommandRegistry().registerCommand(new FontCommand());
         this.getCommandRegistry().registerCommand(new Text3dCommand());
         this.getCommandRegistry().registerCommand(new Text2dCommand());
@@ -56,8 +55,8 @@ public class TextUtils extends JavaPlugin {
     protected void start() {
         super.start();
 
-        String dir_path = getDataDirectory() + File.separator + "fonts";
-        File dir = new File(dir_path);
+        var dir_path = getDataDirectory().resolve("fonts");
+        File dir = new File(dir_path.toString());
         if (!dir.exists()) {
             boolean directoryCreated = dir.mkdirs();
             if (!directoryCreated) {

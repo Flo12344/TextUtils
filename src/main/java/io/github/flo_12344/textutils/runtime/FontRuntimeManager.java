@@ -4,6 +4,7 @@ import com.hypixel.hytale.assetstore.AssetUpdateQuery;
 import com.hypixel.hytale.common.plugin.PluginManifest;
 import com.hypixel.hytale.common.semver.Semver;
 import com.hypixel.hytale.server.core.asset.AssetModule;
+import com.hypixel.hytale.server.core.asset.common.CommonAsset;
 import com.hypixel.hytale.server.core.asset.common.CommonAssetModule;
 import com.hypixel.hytale.server.core.asset.common.CommonAssetRegistry;
 import com.hypixel.hytale.server.core.asset.common.asset.FileCommonAsset;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -40,16 +42,14 @@ public class FontRuntimeManager {
         manifest.setName(RUNTIME_ASSETS_PACK);
         manifest.setVersion(Semver.fromString("1.0.0"));
         AssetModule.get().registerPack(RUNTIME_ASSETS_PACK, runtimeAssetsPath, manifest);
-        reloadAssets();
-
+        ensureCommonAssetsRegistered();
     }
 
-    public void reloadAssets() {
+    public void ensureCommonAssetsRegistered() {
         CommonAssetModule commonAssetModule = CommonAssetModule.get();
         if (commonAssetModule == null || !Files.isDirectory(runtimeCommonModelPath)) {
             return;
         }
-
         try (var stream = Files.list(runtimeCommonModelPath)) {
             stream.filter(p -> p.getFileName().toString().toLowerCase().endsWith(".png") || p.getFileName().toString().endsWith(".blockymodel")).forEach(path -> {
                 try (var sub = Files.list(path)) {
@@ -75,6 +75,21 @@ public class FontRuntimeManager {
         } catch (IOException e) {
             TextUtils.INSTANCE.getLogger().at(Level.WARNING).withCause(e).log("Failed to scan assets");
         }
+    }
+
+    public void broadcastCommonAssets() {
+        ensureCommonAssetsRegistered();
+        CommonAssetModule commonAssetModule = CommonAssetModule.get();
+        if (commonAssetModule == null) {
+            return;
+        }
+        java.util.List<com.hypixel.hytale.server.core.asset.common.CommonAsset> assets = CommonAssetRegistry
+                .getCommonAssetsStartingWith(RUNTIME_ASSETS_PACK, "Items/Textutils/");
+        if (assets == null || assets.isEmpty()) {
+            return;
+        }
+        commonAssetModule.sendAssets(assets, false);
+        TextUtils.INSTANCE.getLogger().at(java.util.logging.Level.INFO).log("Broadcasted %d Font textures", assets.size());
     }
 
     public static Path resolveRuntimeBasePath() {

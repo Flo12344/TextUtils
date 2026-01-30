@@ -36,6 +36,7 @@ public class FontCommand extends AbstractPlayerCommand {
         addSubCommand(new ListCommand());
         addSubCommand(new InitCommand());
         addSubCommand(new RangeCommand());
+        addSubCommand(new RemoveCommand());
     }
 
     @Override
@@ -103,7 +104,7 @@ public class FontCommand extends AbstractPlayerCommand {
             }
             try {
                 FontManager.INSTANCE.LoadFlags(font_id.get(ctx), range_name.get(ctx));
-                TextUtils.INSTANCE.fontRuntimeManager.reloadAssets();
+//                TextUtils.INSTANCE.fontRuntimeManager.reloadAssets();
 
             } catch (IOException | FontFormatException e) {
                 ctx.sendMessage(Message.raw(e.getMessage()));

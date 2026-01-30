@@ -28,11 +28,12 @@ public class TextManager {
 
             holder.addComponent(TransformComponent.getComponentType(), transform);
             holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
-            holder.ensureComponent(UUIDComponent.getComponentType());
+            var uuid = holder.ensureAndGetComponent(UUIDComponent.getComponentType());
             holder.addComponent(Intangible.getComponentType(), Intangible.INSTANCE);
-            store.addComponent(store.addEntity(holder, AddReason.SPAWN),
-                    TextUtils3DTextComponent.getComponentType(),
+            holder.addComponent(TextUtils3DTextComponent.getComponentType(),
                     new TextUtils3DTextComponent(font, text, _label, size));
+            store.addEntity(holder, AddReason.SPAWN);
+            TextManager.text3dUtilsEntity.put(_label, uuid.getUuid());
         });
     }
 

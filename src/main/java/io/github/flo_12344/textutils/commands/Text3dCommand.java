@@ -40,6 +40,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
         addSubCommand(new HideCommand());
         addSubCommand(new ShowCommand());
         addSubCommand(new MoveCommand());
+        addSubCommand(new RotateCommand());
         addSubCommand(new ResizeCommand());
         addSubCommand(new TrackCommand());
     }
@@ -127,10 +128,13 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 ctx.sendMessage(Message.raw(String.format("Font %s doesn't exist.", font)));
                 return;
             }
+            String content = text.get(ctx);
+            if (content.startsWith("\""))
+                content = content.substring(1, content.lastIndexOf("\""));
 
             var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
             var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-            txt.setText(text.get(ctx));
+            txt.setText(content);
             if (!font.isEmpty()) {
                 txt.setFont_name(font);
             }
@@ -163,6 +167,51 @@ public class Text3dCommand extends AbstractPlayerCommand {
             if (transform == null)
                 return;
             transform.getPosition().add(new Vector3d(x.get(ctx), y.get(ctx), z.get(ctx)));
+            int text_pos = 0;
+            float width;
+            if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
+                width = 0.1f;
+            } else {
+                width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
+            }
+            var arr = textUtilsEntity.getText_entities();
+            var size = arr.size();
+            for (var uuid : arr) {
+                var c = store.getExternalData().getRefFromUUID(uuid);
+                Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
+                Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
+                TransformComponent t = store.getComponent(c, TransformComponent.getComponentType());
+                t.setPosition(offset.add(transform.getPosition()));
+                t.setRotation(transform.getRotation());
+                text_pos++;
+            }
+        }
+    }
+
+    public static class RotateCommand extends AbstractPlayerCommand {
+        RequiredArg<String> label;
+        RequiredArg<Vector3f> rotation;
+
+        public RotateCommand() {
+            super("rotate", "");
+            label = withRequiredArg("label", "", ArgTypes.STRING);
+            rotation = withRequiredArg("rotation", "", ArgTypes.ROTATION);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            var label_str = label.get(ctx);
+            if (!TextManager.text3dUtilsEntity.containsKey(label_str)) {
+                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+                return;
+            }
+
+            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
+            var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+            TransformComponent transform = store.getComponent(text_entity, TransformComponent.getComponentType());
+            if (transform == null)
+                return;
+            transform.getRotation().add(rotation.get(ctx));
             int text_pos = 0;
             float width;
             if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
