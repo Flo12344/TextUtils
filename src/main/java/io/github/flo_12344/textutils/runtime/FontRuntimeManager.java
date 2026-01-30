@@ -24,6 +24,7 @@ public class FontRuntimeManager {
     public static final String RUNTIME_ASSETS_DIR = "Textutils_Assets";
     public static final String RUNTIME_MODEL_DIR = "Server/Models/Textutils/";
     public static final String MODEL_TEXTURE_PATH = "Items/Textutils/";
+    public static final String UI_TEXTURE_PATH = "UI/Custom/Textutils/";
 
     private final Path runtimeAssetsPath;
     private final Path runtimeCommonModelPath;

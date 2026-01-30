@@ -1,5 +1,7 @@
 package io.github.flo_12344.textutils.commands;
 
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -7,18 +9,28 @@ import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalAr
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ListArgumentType;
+import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import io.github.flo_12344.textutils.TextUtils;
+import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
 import io.github.flo_12344.textutils.utils.FontConfig;
 import io.github.flo_12344.textutils.utils.FontManager;
+import io.github.flo_12344.textutils.utils.TextManager;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.awt.*;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
-public class FontCommand extends AbstractCommand {
+public class FontCommand extends AbstractPlayerCommand {
     public FontCommand() {
         super("font", "", false);
         addSubCommand(new ListCommand());
@@ -26,29 +38,25 @@ public class FontCommand extends AbstractCommand {
         addSubCommand(new RangeCommand());
     }
 
-    @NullableDecl
     @Override
-    protected CompletableFuture<Void> execute(@NonNullDecl CommandContext ctx) {
-        return null;
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
     }
 
-    public static class ListCommand extends AbstractCommand {
+    public static class ListCommand extends AbstractPlayerCommand {
         protected ListCommand() {
-            super("list", "", false);
+            super("list", "");
         }
 
-        @NullableDecl
         @Override
-        protected CompletableFuture<Void> execute(@NonNullDecl CommandContext ctx) {
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
             FontManager.INSTANCE.getLoaded_font().forEach((s, fontSettings) -> {
                 String out = s + " -> { Range loaded :" + FontConfig.getLoadedRangesAsString(fontSettings.loaded) + "}";
                 ctx.sendMessage(Message.raw(out));
             });
-            return null;
         }
     }
 
-    public static class InitCommand extends AbstractCommand {
+    public static class InitCommand extends AbstractPlayerCommand {
         RequiredArg<String> font_name;
         OptionalArg<String> font_id;
         OptionalArg<Float> size;
@@ -60,25 +68,25 @@ public class FontCommand extends AbstractCommand {
             size = withOptionalArg("size", "", ArgTypes.FLOAT);
         }
 
-        @NullableDecl
         @Override
-        protected CompletableFuture<Void> execute(@NonNullDecl CommandContext ctx) {
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
             var font = font_name.get(ctx).replaceAll("\"", "");
             var id = font_id.get(ctx) == null ? font.replaceAll("\\.ttf|\\.otf", "").replaceAll(" ", "_") : font_id.get(ctx);
             var _size = size.provided(ctx) ? size.get(ctx) : 32f;
 
             try {
                 if (!FontManager.INSTANCE.Init(font, id, _size)) {
-                    ctx.sendMessage(Message.raw("Failed to load %s".formatted(font_name)));
+                    ctx.sendMessage(Message.raw("Failed to load %s".formatted(font)));
+                    return;
                 }
             } catch (IOException | FontFormatException e) {
                 ctx.sendMessage(Message.raw(e.getMessage()));
             }
-            return null;
+            ctx.sendMessage(Message.raw("Font %s loaded as %s".formatted(font, id)));
         }
     }
 
-    public static class RangeCommand extends AbstractCommand {
+    public static class RangeCommand extends AbstractPlayerCommand {
         RequiredArg<String> font_id;
         RequiredArg<List<String>> range_name;
 
@@ -88,9 +96,8 @@ public class FontCommand extends AbstractCommand {
             range_name = withRequiredArg("range_name", "latin|latin_1|latin_ab|punct|currency|arrow|box", new ListArgumentType<>(ArgTypes.STRING));
         }
 
-        @NullableDecl
         @Override
-        protected CompletableFuture<Void> execute(@NonNullDecl CommandContext ctx) {
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
             if (!FontManager.INSTANCE.IsFontLoaded(font_id.get(ctx))) {
                 ctx.sendMessage(Message.raw("Font not found"));
             }
@@ -101,10 +108,46 @@ public class FontCommand extends AbstractCommand {
             } catch (IOException | FontFormatException e) {
                 ctx.sendMessage(Message.raw(e.getMessage()));
             }
-            return null;
         }
     }
 
-    public static class RemoveCommand {
+    public static class RemoveCommand extends AbstractPlayerCommand {
+        RequiredArg<String> font_id;
+
+        protected RemoveCommand() {
+            super("remove", "");
+            font_id = withRequiredArg("font_id", "", ArgTypes.STRING);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            List<String> used_by = new ArrayList<>();
+            var font = font_id.get(ctx);
+            for (var holoid : TextManager.text3dUtilsEntity.keySet()) {
+                var entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(holoid));
+                if (entity == null)
+                    continue;
+                TextUtils3DTextComponent text = store.getComponent(entity, TextUtils3DTextComponent.getComponentType());
+                if (text == null)
+                    continue;
+                if (Objects.equals(text.getFont_name(), font)) {
+                    used_by.add(holoid);
+                }
+            }
+
+            if (!used_by.isEmpty()) {
+                ctx.sendMessage(Message.raw("Can't remove font %s it's used by %s".formatted(font, Arrays.toString(used_by.toArray()))));
+                return;
+            }
+
+            try {
+                FontManager.INSTANCE.RemoveFont(font);
+            } catch (IOException e) {
+                TextUtils.INSTANCE.getLogger().at(Level.WARNING).withCause(e).log("Failed to remove %s", font);
+                ctx.sendMessage(Message.raw("Failed to remove %s".formatted(font)));
+                return;
+            }
+            ctx.sendMessage(Message.raw("Font %s as been removed".formatted(font)));
+        }
     }
 }

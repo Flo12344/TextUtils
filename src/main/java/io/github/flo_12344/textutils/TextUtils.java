@@ -1,11 +1,15 @@
 package io.github.flo_12344.textutils;
 
+import com.hypixel.hytale.server.core.cosmetics.CosmeticRegistry;
+import com.hypixel.hytale.server.core.cosmetics.CosmeticsModule;
+import com.hypixel.hytale.server.core.cosmetics.PlayerSkinGradientSet;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.util.Config;
 import io.github.flo_12344.textutils.commands.*;
 import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
+import io.github.flo_12344.textutils.component.Text3dTrackerComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
 import io.github.flo_12344.textutils.runtime.FontRuntimeManager;
 import io.github.flo_12344.textutils.system.*;
@@ -37,16 +41,15 @@ public class TextUtils extends JavaPlugin {
 
         this.getCommandRegistry().registerCommand(new FontCommand());
         this.getCommandRegistry().registerCommand(new Text3dCommand());
-
-        this.getCommandRegistry().registerCommand(new Test2dCommand());
+        this.getCommandRegistry().registerCommand(new Text2dCommand());
 
         TextUtils3DTextComponent.init(this.getEntityStoreRegistry().registerComponent(TextUtils3DTextComponent.class, "TextUtils3DText", TextUtils3DTextComponent.CODEC));
         Text3dDeleterComponent.init(this.getEntityStoreRegistry().registerComponent(Text3dDeleterComponent.class, "Text3dDeleter", Text3dDeleterComponent.CODEC));
+        Text3dTrackerComponent.init(this.getEntityStoreRegistry().registerComponent(Text3dTrackerComponent.class, "Text3dTracker", Text3dTrackerComponent.CODEC));
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.EditText3DSystem());
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.Text3dSpawned());
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.DeleterText3dSystem());
-
-
+        this.getEntityStoreRegistry().registerSystem(new Text3dSystem.TrackerText3DSystem());
     }
 
     @Override

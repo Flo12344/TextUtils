@@ -17,6 +17,7 @@ import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
 import io.github.flo_12344.textutils.component.Text3dTrackerComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
 import io.github.flo_12344.textutils.utils.FontManager;
+import io.github.flo_12344.textutils.utils.FormattingUtils;
 import io.github.flo_12344.textutils.utils.TextManager;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
@@ -43,7 +44,7 @@ public class Text3dSystem {
             for (var c : comp.getText_entities()) {
                 commandBuffer.removeEntity(store.getExternalData().getWorld().getEntityRef(c), RemoveReason.REMOVE);
             }
-            TextManager.textUtilsEntity.remove(comp.getId());
+            TextManager.text3dUtilsEntity.remove(comp.getId());
             commandBuffer.removeEntity(ref, RemoveReason.REMOVE);
         }
 
@@ -62,8 +63,8 @@ public class Text3dSystem {
         public void onEntityAdd(@NonNullDecl Holder<EntityStore> holder, @NonNullDecl AddReason addReason, @NonNullDecl Store<EntityStore> store) {
             var textUtils = holder.getComponent(TextUtils3DTextComponent.getComponentType());
             var uuid = holder.getComponent(UUIDComponent.getComponentType()).getUuid();
-            if (!TextManager.textUtilsEntity.containsKey(textUtils.getId())) {
-                TextManager.textUtilsEntity.put(textUtils.getId(), uuid);
+            if (!TextManager.text3dUtilsEntity.containsKey(textUtils.getId())) {
+                TextManager.text3dUtilsEntity.put(textUtils.getId(), uuid);
             }
 
 
@@ -72,8 +73,8 @@ public class Text3dSystem {
         @Override
         public void onEntityRemoved(@NonNullDecl Holder<EntityStore> holder, @NonNullDecl RemoveReason removeReason, @NonNullDecl Store<EntityStore> store) {
             var textUtils = holder.getComponent(TextUtils3DTextComponent.getComponentType());
-            if (!TextManager.textUtilsEntity.containsKey(textUtils.getId())) {
-                TextManager.textUtilsEntity.remove(textUtils.getId());
+            if (!TextManager.text3dUtilsEntity.containsKey(textUtils.getId())) {
+                TextManager.text3dUtilsEntity.remove(textUtils.getId());
             }
         }
 
@@ -108,7 +109,7 @@ public class Text3dSystem {
                     return;
                 int text_pos = 0;
 
-                var formated = TextManager.parseFormattedText(textUtilsEntity.getText());
+                var formated = FormattingUtils.parseFormattedText(textUtilsEntity.getText());
 
                 float width;
                 if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
@@ -144,7 +145,7 @@ public class Text3dSystem {
                         if (modelAsset == null) {
                             continue;
                         }
-                        Model model = new Model(modelAsset.getId(), textUtilsEntity.getSize(), modelAsset.generateRandomAttachmentIds(), modelAsset.getDefaultAttachments(), modelAsset.getBoundingBox(), modelAsset.getModel(), modelAsset.getTexture(), TextManager.getGradientSet(str.getColor()), TextManager.getGradientId(str.getColor()), modelAsset.getEyeHeight(), modelAsset.getCrouchOffset(), modelAsset.getAnimationSetMap(), modelAsset.getCamera()
+                        Model model = new Model(modelAsset.getId(), textUtilsEntity.getSize(), modelAsset.generateRandomAttachmentIds(), modelAsset.getDefaultAttachments(), modelAsset.getBoundingBox(), modelAsset.getModel(), modelAsset.getTexture(), FormattingUtils.getGradientSet(str.getColor()), FormattingUtils.getGradientId(str.getColor()), modelAsset.getEyeHeight(), modelAsset.getCrouchOffset(), modelAsset.getAnimationSetMap(), modelAsset.getCamera()
                                 , modelAsset.getLight(), modelAsset.getParticles(), modelAsset.getTrails(), modelAsset.getPhysicsValues(), modelAsset.getDetailBoxes(), modelAsset.getPhobia(), modelAsset.getPhobiaModelAssetId());
 
                         var uuid = holder.ensureAndGetComponent(UUIDComponent.getComponentType()).getUuid();
@@ -161,8 +162,6 @@ public class Text3dSystem {
                         text_pos++;
                     }
                 }
-
-
             }
         }
 

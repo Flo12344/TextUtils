@@ -4,6 +4,7 @@ import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.codec.codecs.map.MapCodec;
+import com.hypixel.hytale.server.core.util.io.FileUtil;
 import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.runtime.FontRuntimeManager;
 
@@ -48,7 +49,7 @@ public class FontManager {
 
     public void InitFromSave(String font_name, String font_id, float size, EnumSet<FontConfig.LOADABLE_BLOCK> loaded) throws IOException, FontFormatException {
         Init(font_name, font_id, size);
-        loaded_font.get(font_id).loaded = loaded;
+        LoadFlags(font_id, loaded);
     }
 
     public boolean Init(String font_name, String font_id, float size) throws IOException, FontFormatException {
@@ -90,6 +91,12 @@ public class FontManager {
                 .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
                 .resolve(FontRuntimeManager.RUNTIME_MODEL_DIR) + File.separator + no_ext_font;
         File f = new File(dir_path);
+        f.mkdirs();
+
+        dir_path = FontRuntimeManager.resolveRuntimeBasePath()
+                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common")
+                .resolve(FontRuntimeManager.UI_TEXTURE_PATH) + File.separator + no_ext_font;
+        f = new File(dir_path);
         f.mkdirs();
         dir_path = FontRuntimeManager.resolveRuntimeBasePath()
                 .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
@@ -146,10 +153,11 @@ public class FontManager {
     }
 
     private void LoadCharacter(String font_name, char c, Font font) throws IOException {
-//        String dir_path = TextUtils.INSTANCE.getDataDirectory() + File.separator + "data" + File.separator + font_name;
-        String dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common").resolve(FontRuntimeManager.MODEL_TEXTURE_PATH) + File.separator + font_name;
-        var out = new File(dir_path + File.separator + "U" + String.format("%04X", (int) c) + ".png");
-        if (out.exists())
+        String model_tex_dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common").resolve(FontRuntimeManager.MODEL_TEXTURE_PATH) + File.separator + font_name;
+        String ui_tex_dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common").resolve(FontRuntimeManager.UI_TEXTURE_PATH) + File.separator + font_name;
+        var out = new File(model_tex_dir_path + File.separator + "U" + String.format("%04X", (int) c) + ".png");
+        var out_ui = new File(ui_tex_dir_path + File.separator + "U" + String.format("%04X", (int) c) + ".png");
+        if (out.exists() && out_ui.exists())
             return;
         var fs = loaded_font.get(font_name);
         BufferedImage image = new BufferedImage(
@@ -166,8 +174,9 @@ public class FontManager {
 
         g2d.drawString(String.valueOf(c), x, y);
         g2d.dispose();
+        ImageIO.write(image, "PNG", out_ui);
         ImageIO.write(image, "PNG", out);
-        String model_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve(FontRuntimeManager.RUNTIME_MODEL_DIR) + File.separator + font_name;
+        String model_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve(FontRuntimeManager.RUNTIME_MODEL_DIR).resolve(font_name).toString();
         ModelGenerator.genEntityModelAsset(model_path, c, font_name);
     }
 
@@ -190,6 +199,22 @@ public class FontManager {
 
     public static String getCharFileAsString(char c, String font) {
         return font + "_U" + String.format("%04X", (int) c);
+    }
+
+    public void RemoveFont(String font_name) throws IOException {
+        FileUtil.deleteDirectory(FontRuntimeManager.resolveRuntimeBasePath()
+                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
+                .resolve(FontRuntimeManager.RUNTIME_MODEL_DIR)
+                .resolve(font_name));
+        FileUtil.deleteDirectory(FontRuntimeManager.resolveRuntimeBasePath()
+                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
+                .resolve("Common")
+                .resolve(FontRuntimeManager.UI_TEXTURE_PATH).resolve(font_name));
+        FileUtil.deleteDirectory(FontRuntimeManager.resolveRuntimeBasePath()
+                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
+                .resolve("Common")
+                .resolve(FontRuntimeManager.MODEL_TEXTURE_PATH).resolve(font_name));
+        loaded_font.remove(font_name);
     }
 
 

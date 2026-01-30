@@ -11,14 +11,18 @@ import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalAr
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
+import com.hypixel.hytale.server.core.command.system.basecommands.AbstractTargetEntityCommand;
+import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
+import io.github.flo_12344.textutils.component.Text3dTrackerComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
 import io.github.flo_12344.textutils.utils.FontManager;
 import io.github.flo_12344.textutils.utils.TextManager;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 
 import java.util.Objects;
@@ -52,7 +56,9 @@ public class Text3dCommand extends AbstractPlayerCommand {
 
         @Override
         protected void execute(@NonNullDecl CommandContext commandContext, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-
+            TextManager.text3dUtilsEntity.keys().asIterator().forEachRemaining(s -> {
+                commandContext.sendMessage(Message.raw(s));
+            });
         }
     }
 
@@ -65,7 +71,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
         OptionalArg<Float> size;
 
         protected NewCommand() {
-            super("new", "Create a new holograms");
+            super("new", "Create a new hologram");
             position = withRequiredArg("position", "", ArgTypes.VECTOR3I);
             text = withRequiredArg("text", "", ArgTypes.STRING);
             id = withOptionalArg("id", "", ArgTypes.STRING);
@@ -88,12 +94,12 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 ctx.sendMessage(Message.raw(String.format("Font %s doesn't exist.", font)));
                 return;
             }
-            if (TextManager.textUtilsEntity.containsKey(_id)) {
+            if (TextManager.text3dUtilsEntity.containsKey(_id)) {
                 ctx.sendMessage(Message.raw(String.format("TextUtilsEntity with label %s already exist.", _id)));
                 return;
             }
 
-            TextManager.SpawnText(pos, rot, world, content, _id, font, tsize);
+            TextManager.SpawnText3dEntity(pos, rot, world, content, _id, font, tsize);
         }
     }
 
@@ -112,7 +118,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
         @Override
         protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
             var label_str = label.get(ctx);
-            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+            if (!TextManager.text3dUtilsEntity.containsKey(label_str)) {
                 ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
                 return;
             }
@@ -122,14 +128,12 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 return;
             }
 
-            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
-            world.execute(() -> {
-                var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-                txt.setText(text.get(ctx));
-                if (!font.isEmpty()) {
-                    txt.setFont_name(font);
-                }
-            });
+            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
+            var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+            txt.setText(text.get(ctx));
+            if (!font.isEmpty()) {
+                txt.setFont_name(font);
+            }
         }
     }
 
@@ -148,37 +152,35 @@ public class Text3dCommand extends AbstractPlayerCommand {
         @Override
         protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
             var label_str = label.get(ctx);
-            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+            if (!TextManager.text3dUtilsEntity.containsKey(label_str)) {
                 ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
                 return;
             }
 
-            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
-            world.execute(() -> {
-                var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-                TransformComponent transform = store.getComponent(text_entity, TransformComponent.getComponentType());
-                if (transform == null)
-                    return;
-                transform.getPosition().add(new Vector3d(x.get(ctx), y.get(ctx), z.get(ctx)));
-                int text_pos = 0;
-                float width;
-                if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
-                    width = 0.1f;
-                } else {
-                    width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
-                }
-                var arr = textUtilsEntity.getText_entities();
-                var size = arr.size();
-                for (var uuid : arr) {
-                    var c = store.getExternalData().getRefFromUUID(uuid);
-                    Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
-                    Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
-                    TransformComponent t = store.getComponent(c, TransformComponent.getComponentType());
-                    t.setPosition(offset.add(transform.getPosition()));
-                    t.setRotation(transform.getRotation());
-                    text_pos++;
-                }
-            });
+            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
+            var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+            TransformComponent transform = store.getComponent(text_entity, TransformComponent.getComponentType());
+            if (transform == null)
+                return;
+            transform.getPosition().add(new Vector3d(x.get(ctx), y.get(ctx), z.get(ctx)));
+            int text_pos = 0;
+            float width;
+            if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
+                width = 0.1f;
+            } else {
+                width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
+            }
+            var arr = textUtilsEntity.getText_entities();
+            var size = arr.size();
+            for (var uuid : arr) {
+                var c = store.getExternalData().getRefFromUUID(uuid);
+                Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
+                Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
+                TransformComponent t = store.getComponent(c, TransformComponent.getComponentType());
+                t.setPosition(offset.add(transform.getPosition()));
+                t.setRotation(transform.getRotation());
+                text_pos++;
+            }
         }
     }
 
@@ -195,16 +197,14 @@ public class Text3dCommand extends AbstractPlayerCommand {
         @Override
         protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
             var label_str = label.get(ctx);
-            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+            if (!TextManager.text3dUtilsEntity.containsKey(label_str)) {
                 ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
                 return;
             }
 
-            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
-            world.execute(() -> {
-                var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-                textUtilsEntity.setSize(size.get(ctx));
-            });
+            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
+            var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+            textUtilsEntity.setSize(size.get(ctx));
         }
     }
 
@@ -219,14 +219,12 @@ public class Text3dCommand extends AbstractPlayerCommand {
         @Override
         protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
             var label_str = label.get(ctx);
-            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+            if (!TextManager.text3dUtilsEntity.containsKey(label_str)) {
                 ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
                 return;
             }
-            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
-            world.execute(() -> {
-                world.getEntityStore().getStore().addComponent(text_entity, Text3dDeleterComponent.getComponentType());
-            });
+            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
+            world.getEntityStore().getStore().addComponent(text_entity, Text3dDeleterComponent.getComponentType());
         }
     }
 
@@ -241,16 +239,14 @@ public class Text3dCommand extends AbstractPlayerCommand {
         @Override
         protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
             var label_str = label.get(ctx);
-            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+            if (!TextManager.text3dUtilsEntity.containsKey(label_str)) {
                 ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
                 return;
             }
 
-            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
-            world.execute(() -> {
-                var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-                txt.setVisible(false);
-            });
+            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
+            var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+            txt.setVisible(false);
             ctx.sendMessage(Message.raw(String.format("TextUtilsEntity %s hidden", label_str)));
         }
     }
@@ -266,16 +262,14 @@ public class Text3dCommand extends AbstractPlayerCommand {
         @Override
         protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
             var label_str = label.get(ctx);
-            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+            if (!TextManager.text3dUtilsEntity.containsKey(label_str)) {
                 ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
                 return;
             }
 
-            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
-            world.execute(() -> {
-                var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-                txt.setVisible(true);
-            });
+            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
+            var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+            txt.setVisible(true);
             ctx.sendMessage(Message.raw(String.format("TextUtilsEntity %s now visible", label_str)));
         }
     }
@@ -294,7 +288,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
         protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl ObjectList<Ref<EntityStore>> objectList, @NonNullDecl World world, @NonNullDecl Store<EntityStore> store) {
             var label_str = label.get(ctx);
 
-            if (!TextManager.textUtilsEntity.containsKey(label_str)) {
+            if (!TextManager.text3dUtilsEntity.containsKey(label_str)) {
                 ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label_str)));
                 return;
             }
@@ -303,7 +297,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 return;
             var uuid = store.getComponent(objectList.getFirst(), UUIDComponent.getComponentType());
 
-            var text_entity = world.getEntityRef(TextManager.textUtilsEntity.get(label_str));
+            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
             store.addComponent(text_entity, Text3dTrackerComponent.getComponentType(), new Text3dTrackerComponent(uuid.getUuid(), offset.get(ctx)));
         }
     }
