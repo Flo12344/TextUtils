@@ -168,27 +168,9 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
                 return;
             }
-
-            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
-            var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-            TransformComponent transform = store.getComponent(text_entity, TransformComponent.getComponentType());
-            if (transform == null)
-                return;
-            transform.getPosition().add(new Vector3d(x.get(ctx), y.get(ctx), z.get(ctx)));
-            int text_pos = 0;
-            float width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64 * textUtilsEntity.getSize();
-            var arr = textUtilsEntity.getText_entities();
-            var size = arr.size();
-            for (var uuid : arr) {
-                var c = store.getExternalData().getRefFromUUID(uuid);
-                Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
-                Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
-                TransformComponent t = store.getComponent(c, TransformComponent.getComponentType());
-                t.setPosition(offset.add(transform.getPosition()));
-                t.setRotation(transform.getRotation());
-                text_pos++;
-            }
+            TextManager.MoveText3dEntity(label_str, world, store, new Vector3d(x.get(ctx), y.get(ctx), z.get(ctx)));
         }
+
     }
 
     public static class RotateCommand extends AbstractPlayerCommand {
@@ -209,30 +191,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 return;
             }
 
-            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
-            var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-            TransformComponent transform = store.getComponent(text_entity, TransformComponent.getComponentType());
-            if (transform == null)
-                return;
-            transform.getRotation().add(rotation.get(ctx));
-            int text_pos = 0;
-            float width;
-            if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
-                width = 0.1f;
-            } else {
-                width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
-            }
-            var arr = textUtilsEntity.getText_entities();
-            var size = arr.size();
-            for (var uuid : arr) {
-                var c = store.getExternalData().getRefFromUUID(uuid);
-                Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
-                Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
-                TransformComponent t = store.getComponent(c, TransformComponent.getComponentType());
-                t.setPosition(offset.add(transform.getPosition()));
-                t.setRotation(transform.getRotation());
-                text_pos++;
-            }
+            TextManager.RotateText3dEntity(label_str, world, store, rotation.get(ctx));
         }
     }
 
