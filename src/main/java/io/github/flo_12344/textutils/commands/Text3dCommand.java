@@ -140,11 +140,9 @@ public class Text3dCommand extends AbstractPlayerCommand {
             if (content.startsWith("\""))
                 content = content.substring(1, content.lastIndexOf("\""));
 
-            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
-            var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-            txt.setText(content);
+            TextManager.EditText3dContent(label_str, world, store, content);
             if (!font.isEmpty()) {
-                txt.setFont_name(font);
+                TextManager.ChangeText3dFont(label_str, world, store, font);
             }
         }
     }
@@ -233,8 +231,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
                 return;
             }
-            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
-            world.getEntityStore().getStore().addComponent(text_entity, Text3dDeleterComponent.getComponentType());
+            TextManager.RemoveText3dEntity(label_str, world, store);
         }
     }
 
@@ -254,9 +251,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 return;
             }
 
-            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
-            var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-            txt.setVisible(false);
+            TextManager.SetText3dVisibility(label_str, world, store, false);
             ctx.sendMessage(Message.raw(String.format("TextUtilsEntity %s hidden", label_str)));
         }
     }
@@ -277,9 +272,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 return;
             }
 
-            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
-            var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-            txt.setVisible(true);
+            TextManager.SetText3dVisibility(label_str, world, store, true);
             ctx.sendMessage(Message.raw(String.format("TextUtilsEntity %s now visible", label_str)));
         }
     }

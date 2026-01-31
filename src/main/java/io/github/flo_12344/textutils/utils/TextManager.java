@@ -8,6 +8,7 @@ import com.hypixel.hytale.server.core.modules.entity.component.*;
 import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
 
 import javax.annotation.Nonnull;
@@ -35,6 +36,11 @@ public class TextManager {
             store.addEntity(holder, AddReason.SPAWN);
             TextManager.text3dUtilsEntity.put(_label, uuid.getUuid());
         });
+    }
+
+    public static void RemoveText3dEntity(String id, World world, Store<EntityStore> store) {
+        var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(id));
+        store.addComponent(text_entity, Text3dDeleterComponent.getComponentType());
     }
 
     public static void ResizeText3dEntity(String id, World world, Store<EntityStore> store, float size) {
@@ -77,5 +83,23 @@ public class TextManager {
             t.setRotation(transform.getRotation());
             text_pos++;
         }
+    }
+
+    public static void SetText3dVisibility(String id, World world, Store<EntityStore> store, Boolean visible) {
+        var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(id));
+        var txt = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+        txt.setVisible(visible);
+    }
+
+    public static void EditText3dContent(String id, World world, Store<EntityStore> store, String content) {
+        var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(id));
+        var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+        txt.setText(content);
+    }
+
+    public static void ChangeText3dFont(String id, World world, Store<EntityStore> store, String font_id) {
+        var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(id));
+        var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+        txt.setFont_name(font_id);
     }
 }
