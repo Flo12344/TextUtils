@@ -73,12 +73,12 @@ public class Text3dCommand extends AbstractPlayerCommand {
 
         protected NewCommand() {
             super("new", "Create a new hologram");
-            position = withRequiredArg("position", "", ArgTypes.VECTOR3I);
-            text = withRequiredArg("text", "", ArgTypes.STRING);
-            id = withOptionalArg("id", "", ArgTypes.STRING);
-            font_id = withOptionalArg("font", "", ArgTypes.STRING);
-            rotation = withOptionalArg("rotation", "", ArgTypes.ROTATION);
-            size = withOptionalArg("size", "", ArgTypes.FLOAT);
+            position = withRequiredArg("position", "Position of the hologram", ArgTypes.VECTOR3I);
+            text = withRequiredArg("text", "Text to display color formatting works like that -> '{color_name}colored{\\\\color_name} not colored'", ArgTypes.STRING);
+            id = withOptionalArg("id", "Id to access the hologram for edits if not set will get a random uuid", ArgTypes.STRING);
+            font_id = withOptionalArg("font", "Id of the desired font", ArgTypes.STRING);
+            rotation = withOptionalArg("rotation", "Rotation of the hologram in rad", ArgTypes.ROTATION);
+            size = withOptionalArg("size", "Size of the hologram", ArgTypes.FLOAT);
         }
 
         @Override
@@ -118,10 +118,10 @@ public class Text3dCommand extends AbstractPlayerCommand {
         OptionalArg<String> font_id;
 
         public EditCommand() {
-            super("edit", "");
-            label = withRequiredArg("label", "", ArgTypes.STRING);
-            text = withRequiredArg("text", "", ArgTypes.STRING);
-            font_id = withOptionalArg("font", "", ArgTypes.STRING);
+            super("edit", "Edit a specified hologram");
+            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
+            text = withRequiredArg("text", "Text to use as a replacement", ArgTypes.STRING);
+            font_id = withOptionalArg("font", "Id of the desired font", ArgTypes.STRING);
         }
 
         @Override
@@ -154,8 +154,8 @@ public class Text3dCommand extends AbstractPlayerCommand {
         RequiredArg<Float> x, y, z;
 
         public MoveCommand() {
-            super("move", "");
-            label = withRequiredArg("label", "", ArgTypes.STRING);
+            super("move", "Move a desired hologram by precise value");
+            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
             x = withRequiredArg("x", "", ArgTypes.FLOAT);
             y = withRequiredArg("y", "", ArgTypes.FLOAT);
             z = withRequiredArg("z", "", ArgTypes.FLOAT);
@@ -201,8 +201,8 @@ public class Text3dCommand extends AbstractPlayerCommand {
         RequiredArg<Vector3f> rotation;
 
         public RotateCommand() {
-            super("rotate", "");
-            label = withRequiredArg("label", "", ArgTypes.STRING);
+            super("rotate", "Rotate the specified hologram");
+            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
             rotation = withRequiredArg("rotation", "", ArgTypes.ROTATION);
         }
 
@@ -246,8 +246,8 @@ public class Text3dCommand extends AbstractPlayerCommand {
         RequiredArg<Float> size;
 
         public ResizeCommand() {
-            super("resize", "");
-            label = withRequiredArg("label", "", ArgTypes.STRING);
+            super("resize", "Change the size of the specified hologram");
+            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
             size = withRequiredArg("size", "", ArgTypes.FLOAT);
         }
 
@@ -269,8 +269,8 @@ public class Text3dCommand extends AbstractPlayerCommand {
         RequiredArg<String> label;
 
         public RemoveCommand() {
-            super("remove", "");
-            label = withRequiredArg("label", "", ArgTypes.STRING);
+            super("remove", "Remove the specified hologram");
+            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
         }
 
         @Override
@@ -289,8 +289,8 @@ public class Text3dCommand extends AbstractPlayerCommand {
         RequiredArg<String> label;
 
         public HideCommand() {
-            super("hide", "");
-            label = withRequiredArg("id", "", ArgTypes.STRING);
+            super("hide", "Hide the specified hologram");
+            label = withRequiredArg("id", "Id of the desired hologram", ArgTypes.STRING);
         }
 
         @Override
@@ -312,7 +312,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
         RequiredArg<String> label;
 
         public ShowCommand() {
-            super("show", "");
+            super("show", "Unhide the specified hologram");
             label = withRequiredArg("label", "", ArgTypes.STRING);
         }
 
@@ -336,9 +336,9 @@ public class Text3dCommand extends AbstractPlayerCommand {
         OptionalArg<Vector3i> offset;
 
         public TrackCommand() {
-            super("track", "");
-            label = withRequiredArg("id", "", ArgTypes.STRING);
-            offset = withOptionalArg("offset", "", ArgTypes.VECTOR3I);
+            super("track", "Link the specified hologram to an entity");
+            label = withRequiredArg("id", "Id of the desired hologram", ArgTypes.STRING);
+            offset = withOptionalArg("offset", "Offset to the entity", ArgTypes.VECTOR3I);
         }
 
         @Override

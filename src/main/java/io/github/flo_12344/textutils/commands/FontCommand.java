@@ -48,7 +48,7 @@ public class FontCommand extends AbstractPlayerCommand {
 
     public static class ListCommand extends AbstractPlayerCommand {
         protected ListCommand() {
-            super("list", "");
+            super("list", "List all the usable fonts");
         }
 
         @Override
@@ -95,9 +95,9 @@ public class FontCommand extends AbstractPlayerCommand {
         RequiredArg<List<String>> range_name;
 
         protected RangeCommand() {
-            super("range", "Generate a glyphs for the specified range and font");
-            font_id = withRequiredArg("font_id", "", ArgTypes.STRING);
-            range_name = withRequiredArg("range_name", FontConfig.getAllOptions(), new ListArgumentType<>(ArgTypes.STRING));
+            super("range", "Generate a glyphs for the specified range and font (ranges are based on https://www.unicodepedia.com/groups/)");
+            font_id = withRequiredArg("font_id", "Id of the desired font", ArgTypes.STRING);
+            range_name = withRequiredArg("range_name", "one or multiples of the following (separated by ',')" + FontConfig.getAllOptions(), new ListArgumentType<>(ArgTypes.STRING));
         }
 
         @Override
@@ -122,11 +122,11 @@ public class FontCommand extends AbstractPlayerCommand {
         RequiredArg<Integer> end;
 
         protected CustomRangeCommand() {
-            super("customrange", "Generate a glyphs for the specified range and font");
-            font_id = withRequiredArg("font_id", "", ArgTypes.STRING);
-            range_name = withRequiredArg("range_name", "", ArgTypes.STRING);
-            start = withRequiredArg("start", "", ArgTypes.INTEGER);
-            end = withRequiredArg("end", "", ArgTypes.INTEGER);
+            super("customrange", "Generate a glyphs for the specified range and font if you are not sure use https://www.unicodepedia.com/groups/ or the simpler range subCommand");
+            font_id = withRequiredArg("font_id", "Id of the desired font", ArgTypes.STRING);
+            range_name = withRequiredArg("range_name", "Desired name for the range", ArgTypes.STRING);
+            start = withRequiredArg("start", "Start of the Unicode range", ArgTypes.INTEGER);
+            end = withRequiredArg("end", "End of the Unicode range", ArgTypes.INTEGER);
         }
 
         @Override
@@ -146,8 +146,8 @@ public class FontCommand extends AbstractPlayerCommand {
         RequiredArg<String> font_id;
 
         protected RemoveCommand() {
-            super("remove", "");
-            font_id = withRequiredArg("font_id", "", ArgTypes.STRING);
+            super("remove", "Remove the specified font if not in use");
+            font_id = withRequiredArg("font_id", "Id of the desired font", ArgTypes.STRING);
         }
 
         @Override
