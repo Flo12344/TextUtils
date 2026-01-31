@@ -37,6 +37,12 @@ public class TextManager {
         });
     }
 
+    public static void ResizeText3dEntity(String id, World world, Store<EntityStore> store, float size) {
+        var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(id));
+        var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+        textUtilsEntity.setSize(size);
+    }
+
     public static void MoveText3dEntity(String id, World world, Store<EntityStore> store, Vector3d pos) {
         TransformText3dEntity(id, world, store, new Vector3f(), pos);
     }

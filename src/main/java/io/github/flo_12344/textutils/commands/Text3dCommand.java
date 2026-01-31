@@ -213,9 +213,8 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 return;
             }
 
-            var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(label_str));
-            var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
-            textUtilsEntity.setSize(size.get(ctx));
+            TextManager.ResizeText3dEntity(label_str, world, store, size.get(ctx));
+
         }
     }
 
