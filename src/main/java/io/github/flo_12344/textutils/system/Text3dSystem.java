@@ -125,7 +125,6 @@ public class Text3dSystem {
                 }
 
                 for (var str : formated) {
-                    Universe.get().getLogger().atInfo().log(str.getColor());
                     for (char c : str.getText().toCharArray()) {
                         TransformComponent chara_transform = transform.clone();
                         Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);

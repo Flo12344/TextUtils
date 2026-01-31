@@ -51,7 +51,7 @@ public class Text2dCommand extends AbstractPlayerCommand {
             page_data += "LayoutMode: Center;\n";
             var group = "Group {\n";
             group += "LayoutMode: Left;\n";
-            int scale = (int) (FontManager.INSTANCE.getFontSettings(font_id.get(ctx)).texture_size);
+            int scale = (int) (FontManager.INSTANCE.getFontSettings(font_id.get(ctx)).glyph_size);
             float resize = ctx.provided(size) ? size.get(ctx) : 1;
 
             for (var t : to_use) {
@@ -68,8 +68,6 @@ public class Text2dCommand extends AbstractPlayerCommand {
             group += "}\n";
             group += "}\n";
             page_data += group;
-
-            System.out.println(page_data);
 
             var player = ctx.senderAs(Player.class);
             TestPages page = new TestPages(playerRef, page_data);

@@ -1,19 +1,19 @@
 package io.github.flo_12344.textutils.utils;
 
-import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.codec.codecs.map.MapCodec;
 import com.hypixel.hytale.server.core.util.io.FileUtil;
 import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.runtime.FontRuntimeManager;
+import io.sentry.util.Pair;
 
+import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.lang.classfile.CodeBuilder;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
@@ -36,7 +36,7 @@ public class FontManager {
     public static FontManager INSTANCE;
 
     private final HashMap<String, FontConfig> loaded_font = new HashMap<>();
-    private static Path FONT_DIR;
+    public static Path FONT_DIR;
 
     public HashMap<String, FontConfig> getLoaded_font() {
         return loaded_font;
@@ -54,19 +54,17 @@ public class FontManager {
 
     public boolean Init(String font_name, String font_id, float size) throws IOException, FontFormatException {
         Font font;
-        var file = FONT_DIR.resolve(font_name + ".ttf").toFile();
+        var file = new File(font_name + ".ttf");
         if (file.exists()) {
             font = Font.createFont(Font.TRUETYPE_FONT, file)
                     .deriveFont(size);
         } else {
-            file = FONT_DIR.resolve(font_name + ".otf").toFile();
+            file = new File(font_name + ".otf");
             if (file.exists()) {
                 font = Font.createFont(Font.TRUETYPE_FONT, file)
                         .deriveFont(size);
             } else return false;
         }
-
-        String no_ext_font = font_name.replace(".ttf", "").replace(".otf", "");
 
         BufferedImage tempImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D tempG2d = tempImage.createGraphics();
@@ -82,51 +80,142 @@ public class FontManager {
         fs.fm = fm;
         fs.max_height = fm.getHeight();
         fs.max_width = maxWidth;
-        fs.texture_size = potSize;
+        fs.glyph_size = potSize;
         fs.font_file = font_name;
         fs.size = size;
 
         loaded_font.put(font_id, fs);
         String dir_path = FontRuntimeManager.resolveRuntimeBasePath()
                 .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
-                .resolve(FontRuntimeManager.RUNTIME_MODEL_DIR) + File.separator + no_ext_font;
+                .resolve(FontRuntimeManager.RUNTIME_MODEL_DIR) + File.separator + font_id;
         File f = new File(dir_path);
         f.mkdirs();
 
         dir_path = FontRuntimeManager.resolveRuntimeBasePath()
                 .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common")
-                .resolve(FontRuntimeManager.UI_TEXTURE_PATH) + File.separator + no_ext_font;
+                .resolve(FontRuntimeManager.UI_TEXTURE_PATH) + File.separator + font_id;
         f = new File(dir_path);
         f.mkdirs();
         dir_path = FontRuntimeManager.resolveRuntimeBasePath()
                 .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
                 .resolve("Common")
-                .resolve(FontRuntimeManager.MODEL_TEXTURE_PATH) + File.separator + no_ext_font;
+                .resolve(FontRuntimeManager.MODEL_TEXTURE_PATH) + File.separator + font_id;
         f = new File(dir_path);
         f.mkdirs();
-        ModelGenerator.genCharBlockyModel(dir_path, potSize);
-        LoadCharacter(font_id, (char) 0);
         return true;
     }
 
-    public void LoadRanges(String font_name, int start, int end) throws IOException, FontFormatException {
+    public void RenderAtlases(String font_name, int start, int end, String atlas, Font font) throws IOException {
+        var fs = loaded_font.get(font_name);
+        int total = end - start + 1;
+
+        int totalGlyphs = end - start + 1;
+        int padding = 2;
+        int cellSize = fs.glyph_size + padding * 2;
+        int cols = (int) Math.ceil(Math.sqrt(totalGlyphs));
+        int rows = (int) Math.ceil((double) totalGlyphs / cols);
+        int rawSize = Math.max(cols, rows) * cellSize;
+
+        int atlasSize;
+        int pageCount = 0;
+
+        if (rawSize <= 512) {
+            atlasSize = 512;
+        } else if (rawSize <= 1024) {
+            atlasSize = 1024;
+        } else if (rawSize <= 2048) {
+            atlasSize = 2048;
+        } else {
+            atlasSize = 2048; // page size
+            int glyphsPerRow = atlasSize / cellSize;
+            int glyphsPerPage = glyphsPerRow * glyphsPerRow;
+            pageCount = (int) Math.ceil(
+                    (double) totalGlyphs / glyphsPerPage
+            );
+        }
+        List<BufferedImage> pages = new ArrayList<>();
+
+        pages.add(new BufferedImage(
+                atlasSize, atlasSize, BufferedImage.TYPE_INT_ARGB
+        ));
+
+        Graphics2D g2d = pages.getLast().createGraphics();
+        g2d.setFont(font);
+        g2d.setColor(Color.WHITE);
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+
+        String visual_out_dir = FontRuntimeManager.resolveRuntimeBasePath()
+                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
+                .resolve("Common")
+                .resolve(FontRuntimeManager.MODEL_TEXTURE_PATH)
+                .resolve(font_name).toString();
+
+        String asset_out_dir = FontRuntimeManager.resolveRuntimeBasePath()
+                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
+                .resolve(FontRuntimeManager.RUNTIME_MODEL_DIR)
+                .resolve(font_name).toString();
+
+        int xpos = 0, ypos = 0;
+        int currentPage = 0;
+        for (var i = 0; i < total; i++) {
+            char ch = (char) (start + i);
+            //center to glyph bounds
+            int charWidth = fs.fm.charWidth(ch);
+            int cellX = xpos * cellSize + padding;
+            int cellY = ypos * cellSize + padding;
+
+            int x = cellX + (fs.glyph_size - charWidth) / 2;
+            int y = cellY + (fs.glyph_size - (fs.fm.getAscent() + fs.fm.getDescent())) / 2 + fs.fm.getAscent();
+            g2d.drawString(String.valueOf(ch), x, y);
+            ModelGenerator.genCharBlockyModel(visual_out_dir + File.separator + "U" + String.format("%04X", (int) ch), fs.glyph_size, cellX, cellY);
+            ModelGenerator.genEntityModelAsset(asset_out_dir, ch, font_name, atlas + (pageCount != 0 ? ("_" + currentPage) : ""));
+            xpos++;
+            if (xpos >= cols) {
+                xpos = 0;
+                ypos++;
+                if (ypos * cellSize + padding >= atlasSize && pageCount != 0) {
+                    currentPage++;
+                    ypos = 0;
+                    pages.add(new BufferedImage(
+                            atlasSize, atlasSize, BufferedImage.TYPE_INT_ARGB
+                    ));
+                    g2d.dispose();
+                    g2d = pages.getLast().createGraphics();
+                    g2d.setFont(font);
+                    g2d.setColor(Color.WHITE);
+                    g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                            RenderingHints.VALUE_ANTIALIAS_ON);
+                }
+            }
+        }
+        g2d.dispose();
+        currentPage = 0;
+        for (var bufferedImage : pages) {
+            ImageIO.write(bufferedImage, "PNG", new File(visual_out_dir + File.separator + atlas + (pageCount != 0 ? ("_" + currentPage) : "") + ".png"));
+            currentPage++;
+        }
+    }
+
+    public void LoadRange(String font_name, int start, int end, String block) throws IOException, FontFormatException {
         Font font = Font.createFont(Font.TRUETYPE_FONT, new File(TextUtils.INSTANCE.getDataDirectory() + File.separator + "fonts" + File.separator + font_name + ".ttf")).deriveFont(32f);
         for (char c = (char) start; c < end; c++) {
             LoadCharacter(font_name, c, font);
         }
+        RenderAtlases(font_name, start, end, block, font);
+    }
+
+    private void LoadRange(String font_name, Pair<Integer, Integer> se, String block) throws IOException, FontFormatException {
+        LoadRange(font_name, se.getFirst(), se.getSecond(), block);
     }
 
     public void LoadFlags(String font_name, EnumSet<FontConfig.LOADABLE_BLOCK> flags) throws IOException, FontFormatException {
         for (var flag : flags) {
-            switch (flag) {
-                case BASIC_LATIN -> LoadRanges(font_name, 1, 127);
-                case LATIN_EXT_1 -> LoadRanges(font_name, 128, 255);
-                case LATIN_EXT_AB -> LoadRanges(font_name, 256, 591);
-                case PUNCTUATION -> LoadRanges(font_name, 8192, 8303);
-                case CURRENCY -> LoadRanges(font_name, 8352, 8377);
-                case ARROW -> LoadRanges(font_name, 8592, 8703);
-                case BOX -> LoadRanges(font_name, 9472, 9599);
-            }
+            LoadRange(font_name, FontConfig.GetRange(flag), flag.toString());
         }
         loaded_font.get(font_name).loaded.addAll(flags);
     }
@@ -134,34 +223,19 @@ public class FontManager {
     public void LoadFlags(String font_name, List<String> flags_str) throws IOException, FontFormatException {
         EnumSet<FontConfig.LOADABLE_BLOCK> flags = EnumSet.noneOf(FontConfig.LOADABLE_BLOCK.class);
         for (var flag : flags_str) {
-            switch (flag) {
-                case "latin" -> flags.add(FontConfig.LOADABLE_BLOCK.BASIC_LATIN);
-                case "latin_1" -> flags.add(FontConfig.LOADABLE_BLOCK.LATIN_EXT_1);
-                case "latin_ab" -> flags.add(FontConfig.LOADABLE_BLOCK.LATIN_EXT_AB);
-                case "punct" -> flags.add(FontConfig.LOADABLE_BLOCK.PUNCTUATION);
-                case "currency" -> flags.add(FontConfig.LOADABLE_BLOCK.CURRENCY);
-                case "arrow" -> flags.add(FontConfig.LOADABLE_BLOCK.ARROW);
-                case "box" -> flags.add(FontConfig.LOADABLE_BLOCK.BOX);
-            }
+            flags.add(FontConfig.GetFromStr(flag));
         }
         LoadFlags(font_name, flags);
     }
 
-    public void LoadCharacter(String font_name, char c) throws IOException, FontFormatException {
-        Font font = Font.createFont(Font.TRUETYPE_FONT, new File(TextUtils.INSTANCE.getDataDirectory() + File.separator + "fonts" + File.separator + font_name + ".ttf")).deriveFont(32f);
-        LoadCharacter(font_name, c, font);
-    }
-
     private void LoadCharacter(String font_name, char c, Font font) throws IOException {
-        String model_tex_dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common").resolve(FontRuntimeManager.MODEL_TEXTURE_PATH) + File.separator + font_name;
         String ui_tex_dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common").resolve(FontRuntimeManager.UI_TEXTURE_PATH) + File.separator + font_name;
-        var out = new File(model_tex_dir_path + File.separator + "U" + String.format("%04X", (int) c) + ".png");
         var out_ui = new File(ui_tex_dir_path + File.separator + "U" + String.format("%04X", (int) c) + ".png");
-        if (out.exists() && out_ui.exists())
+        if (out_ui.exists())
             return;
         var fs = loaded_font.get(font_name);
         BufferedImage image = new BufferedImage(
-                fs.texture_size, fs.texture_size, BufferedImage.TYPE_INT_ARGB
+                fs.glyph_size, fs.glyph_size, BufferedImage.TYPE_INT_ARGB
         );
 
         Graphics2D g2d = image.createGraphics();
@@ -169,17 +243,13 @@ public class FontManager {
         g2d.setColor(Color.WHITE);
 
         int charWidth = fs.fm.charWidth(c);
-        int x = (fs.texture_size - charWidth) / 2;
-        int y = (fs.texture_size + fs.fm.getAscent() - fs.fm.getDescent()) / 2;
+        int x = (fs.glyph_size - charWidth) / 2;
+        int y = (fs.glyph_size + fs.fm.getAscent() - fs.fm.getDescent()) / 2;
 
         g2d.drawString(String.valueOf(c), x, y);
         g2d.dispose();
         ImageIO.write(image, "PNG", out_ui);
-        ImageIO.write(image, "PNG", out);
-        String model_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve(FontRuntimeManager.RUNTIME_MODEL_DIR).resolve(font_name).toString();
-        ModelGenerator.genEntityModelAsset(model_path, c, font_name);
     }
-
 
     public boolean IsFontLoaded(String font_name, EnumSet<FontConfig.LOADABLE_BLOCK> flag) {
         if (!loaded_font.containsKey(font_name)) {
@@ -216,6 +286,5 @@ public class FontManager {
                 .resolve(FontRuntimeManager.MODEL_TEXTURE_PATH).resolve(font_name));
         loaded_font.remove(font_name);
     }
-
 
 }

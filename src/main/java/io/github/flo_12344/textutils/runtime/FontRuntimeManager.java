@@ -4,7 +4,6 @@ import com.hypixel.hytale.assetstore.AssetUpdateQuery;
 import com.hypixel.hytale.common.plugin.PluginManifest;
 import com.hypixel.hytale.common.semver.Semver;
 import com.hypixel.hytale.server.core.asset.AssetModule;
-import com.hypixel.hytale.server.core.asset.common.CommonAsset;
 import com.hypixel.hytale.server.core.asset.common.CommonAssetModule;
 import com.hypixel.hytale.server.core.asset.common.CommonAssetRegistry;
 import com.hypixel.hytale.server.core.asset.common.asset.FileCommonAsset;
@@ -16,7 +15,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -27,12 +25,18 @@ public class FontRuntimeManager {
     public static final String RUNTIME_MODEL_DIR = "Server/Models/Textutils/";
     public static final String MODEL_TEXTURE_PATH = "Items/Textutils/";
     public static final String UI_TEXTURE_PATH = "UI/Custom/Textutils/";
+    private static final AssetUpdateQuery TILE_UPDATE_QUERY = new AssetUpdateQuery(
+            new AssetUpdateQuery.RebuildCache(false, true, true, false, false, false));
 
     private final Path runtimeAssetsPath;
     private final Path runtimeCommonModelPath;
 
     public FontRuntimeManager() {
         this.runtimeAssetsPath = resolveRuntimeBasePath().resolve(RUNTIME_ASSETS_DIR);
+        var check = runtimeAssetsPath.toFile();
+        if (!check.exists()) {
+            check.mkdirs();
+        }
         this.runtimeCommonModelPath = runtimeAssetsPath.resolve("Common").resolve(MODEL_TEXTURE_PATH);
     }
 
@@ -77,13 +81,13 @@ public class FontRuntimeManager {
         }
     }
 
-    public void broadcastCommonAssets() {
+    public void broadcastTexturesModels() {
         ensureCommonAssetsRegistered();
         CommonAssetModule commonAssetModule = CommonAssetModule.get();
         if (commonAssetModule == null) {
             return;
         }
-        java.util.List<com.hypixel.hytale.server.core.asset.common.CommonAsset> assets = CommonAssetRegistry
+        var assets = CommonAssetRegistry
                 .getCommonAssetsStartingWith(RUNTIME_ASSETS_PACK, "Items/Textutils/");
         if (assets == null || assets.isEmpty()) {
             return;

@@ -15,6 +15,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
+import io.github.flo_12344.textutils.runtime.FontRuntimeManager;
 import io.github.flo_12344.textutils.utils.FontConfig;
 import io.github.flo_12344.textutils.utils.FontManager;
 import io.github.flo_12344.textutils.utils.TextManager;
@@ -22,6 +23,7 @@ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +38,7 @@ public class FontCommand extends AbstractPlayerCommand {
         addSubCommand(new ListCommand());
         addSubCommand(new InitCommand());
         addSubCommand(new RangeCommand());
+        addSubCommand(new CustomRangeCommand());
         addSubCommand(new RemoveCommand());
     }
 
@@ -76,7 +79,7 @@ public class FontCommand extends AbstractPlayerCommand {
             var _size = size.provided(ctx) ? size.get(ctx) : 32f;
 
             try {
-                if (!FontManager.INSTANCE.Init(font, id, _size)) {
+                if (!FontManager.INSTANCE.Init(FontManager.FONT_DIR + File.separator + font, id, _size)) {
                     ctx.sendMessage(Message.raw("Failed to load %s".formatted(font)));
                     return;
                 }
@@ -94,7 +97,7 @@ public class FontCommand extends AbstractPlayerCommand {
         protected RangeCommand() {
             super("range", "Generate a glyphs for the specified range and font");
             font_id = withRequiredArg("font_id", "", ArgTypes.STRING);
-            range_name = withRequiredArg("range_name", "latin|latin_1|latin_ab|punct|currency|arrow|box", new ListArgumentType<>(ArgTypes.STRING));
+            range_name = withRequiredArg("range_name", FontConfig.getAllOptions(), new ListArgumentType<>(ArgTypes.STRING));
         }
 
         @Override
@@ -104,8 +107,35 @@ public class FontCommand extends AbstractPlayerCommand {
             }
             try {
                 FontManager.INSTANCE.LoadFlags(font_id.get(ctx), range_name.get(ctx));
-//                TextUtils.INSTANCE.fontRuntimeManager.reloadAssets();
+                TextUtils.INSTANCE.fontRuntimeManager.broadcastTexturesModels();
 
+            } catch (IOException | FontFormatException e) {
+                ctx.sendMessage(Message.raw(e.getMessage()));
+            }
+        }
+    }
+
+    public static class CustomRangeCommand extends AbstractPlayerCommand {
+        RequiredArg<String> font_id;
+        RequiredArg<String> range_name;
+        RequiredArg<Integer> start;
+        RequiredArg<Integer> end;
+
+        protected CustomRangeCommand() {
+            super("customrange", "Generate a glyphs for the specified range and font");
+            font_id = withRequiredArg("font_id", "", ArgTypes.STRING);
+            range_name = withRequiredArg("range_name", "", ArgTypes.STRING);
+            start = withRequiredArg("start", "", ArgTypes.INTEGER);
+            end = withRequiredArg("end", "", ArgTypes.INTEGER);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            if (!FontManager.INSTANCE.IsFontLoaded(font_id.get(ctx))) {
+                ctx.sendMessage(Message.raw("Font not found"));
+            }
+            try {
+                FontManager.INSTANCE.LoadRange(font_id.get(ctx), start.get(ctx), end.get(ctx), range_name.get(ctx));
             } catch (IOException | FontFormatException e) {
                 ctx.sendMessage(Message.raw(e.getMessage()));
             }

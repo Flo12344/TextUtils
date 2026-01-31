@@ -3,10 +3,11 @@ package io.github.flo_12344.textutils.utils;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
 
 public class ModelGenerator {
-    public static void genCharBlockyModel(String out_dir, int size) throws IOException {
-        FileWriter out = new FileWriter(out_dir + File.separator + "base_model.blockymodel");
+    public static void genCharBlockyModel(String out_dir, int size, int x, int y) throws IOException {
+        FileWriter out = new FileWriter(out_dir + ".blockymodel");
         out.append("{\n");
         out.append("  \"nodes\": [\n");
         out.append("    {\n");
@@ -47,8 +48,8 @@ public class ModelGenerator {
         out.append("        \"textureLayout\": {\n");
         out.append("          \"front\": {\n");
         out.append("            \"offset\": {\n");
-        out.append("              \"x\": 0,\n");
-        out.append("              \"y\": 0\n");
+        out.append("              \"x\": %s,\n".formatted(x));
+        out.append("              \"y\": %s\n".formatted(y));
         out.append("            },\n");
         out.append("            \"mirror\": {\n");
         out.append("              \"x\": false,\n");
@@ -70,32 +71,25 @@ public class ModelGenerator {
         out.close();
     }
 
-    public static void genEntityModelAsset(String out_dir, char c, String font_name) throws IOException {
+    public static void genEntityModelAsset(String out_dir, char c, String font_name, String file) throws IOException {
         FileWriter out = new FileWriter(out_dir + File.separator + font_name + "_U" + String.format("%04X", (int) c) + ".json");
         out.append("{\n");
-        if (c == 0)
-            out.append("\"Model\": \"Items/Textutils/" + font_name + "/base_model.blockymodel\",\n");
-        else
-            out.append("\"Parent\": \"" + font_name + "_U0000\",");
-        out.append("    \"Texture\": \"Items/Textutils/" + font_name + "/U" + String.format("%04X", (int) c) + ".png\",\n");
-        out.append("    \"Id\": \"" + font_name + "_U" + String.format("%04X", (int) c) + "\"");
-        if (c == 0) {
-            out.append(",\n");
-            out.append("    \"HitBox\": {\n");
-            out.append("        \"Max\": {\n");
-            out.append("            \"X\": 0.02,\n");
-            out.append("            \"Y\": 0.05,\n");
-            out.append("            \"Z\": 0.02\n");
-            out.append("        },\n");
-            out.append("        \"Min\": {\n");
-            out.append("            \"X\": 0,\n");
-            out.append("            \"Y\": 0,\n");
-            out.append("            \"Z\": 0\n");
-            out.append("        }\n");
-            out.append("    },\n");
-            out.append("    \"MinScale\": 0.25,\n");
-            out.append("    \"MaxScale\": 3");
-        }
+        out.append("\"Model\": \"Items/Textutils/" + font_name + "/U" + String.format("%04X", (int) c) + ".blockymodel\",\n");
+        out.append("    \"Texture\": \"Items/Textutils/" + font_name + "/" + file + ".png\",\n");
+        out.append("\"HitBox\": {\n" +
+                "    \"Max\": {\n" +
+                "      \"X\": 0.02,\n" +
+                "      \"Y\": 0.05,\n" +
+                "      \"Z\": 0.02\n" +
+                "    },\n" +
+                "    \"Min\": {\n" +
+                "      \"X\": 0,\n" +
+                "      \"Y\": 0,\n" +
+                "      \"Z\": 0\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"MinScale\": 0.25,\n" +
+                "  \"MaxScale\": 3");
         out.append("\n}");
         out.close();
     }
