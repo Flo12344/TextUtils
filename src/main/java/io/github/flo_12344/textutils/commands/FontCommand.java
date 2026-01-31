@@ -79,7 +79,7 @@ public class FontCommand extends AbstractPlayerCommand {
             var _size = size.provided(ctx) ? size.get(ctx) : 32f;
 
             try {
-                if (!FontManager.INSTANCE.Init(FontManager.FONT_DIR + File.separator + font, id, _size)) {
+                if (!FontManager.INSTANCE.InitFromUserCommands(FontManager.FONT_DIR + File.separator + font, id, _size)) {
                     ctx.sendMessage(Message.raw("Failed to load %s".formatted(font)));
                     return;
                 }
@@ -154,6 +154,11 @@ public class FontCommand extends AbstractPlayerCommand {
         protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
             List<String> used_by = new ArrayList<>();
             var font = font_id.get(ctx);
+            if (FontManager.INSTANCE.getFontSettings(font).loaded_by == FontConfig.SOURCE.MODS) {
+                ctx.sendMessage(Message.raw("Can't remove font added through mods"));
+                return;
+            }
+
             for (var holoid : TextManager.text3dUtilsEntity.keySet()) {
                 var entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(holoid));
                 if (entity == null)

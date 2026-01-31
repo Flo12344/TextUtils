@@ -28,7 +28,7 @@ public class FontManager {
             .afterDecode((fontManager, extraInfo) -> {
                 fontManager.loaded_font.forEach((s, fontConfig) -> {
                     try {
-                        FontManager.INSTANCE.InitFromSave(fontConfig.font_file, s, fontConfig.size, fontConfig.loaded);
+                        FontManager.INSTANCE.InitFromSave(fontConfig.font_file, s, fontConfig.size, fontConfig.loaded, fontConfig.loaded_by);
                     } catch (IOException | FontFormatException e) {
                         throw new RuntimeException(e);
                     }
@@ -49,12 +49,27 @@ public class FontManager {
         FONT_DIR = TextUtils.INSTANCE.getDataDirectory().resolve("fonts");
     }
 
-    public void InitFromSave(String font_name, String font_id, float size, EnumSet<FontConfig.LOADABLE_BLOCK> loaded) throws IOException, FontFormatException {
-        Init(font_name, font_id, size);
+    private void InitFromSave(String font_name, String font_id, float size, EnumSet<FontConfig.LOADABLE_BLOCK> loaded, FontConfig.SOURCE source) throws IOException, FontFormatException {
+        Init(font_name, font_id, size, source);
         LoadFlags(font_id, loaded);
     }
 
-    public boolean Init(String font_name, String font_id, float size) throws IOException, FontFormatException {
+    /**
+     * Font added through this methods will not be deletable through user commands
+     */
+    public boolean InitFromMod(String font_name, String font_id, float size) throws IOException, FontFormatException {
+        return Init(font_name, font_id, size, FontConfig.SOURCE.MODS);
+    }
+
+
+    /**
+     * Font added through this methods will be deletable through user commands
+     */
+    public boolean InitFromUserCommands(String font_name, String font_id, float size) throws IOException, FontFormatException {
+        return Init(font_name, font_id, size, FontConfig.SOURCE.USER);
+    }
+
+    private boolean Init(String font_name, String font_id, float size, FontConfig.SOURCE source) throws IOException, FontFormatException {
         Font font;
         var file = new File(font_name + ".ttf");
         if (file.exists()) {

@@ -23,10 +23,10 @@ public class FontConfig {
                     (fontConfig, strings) ->
                             fontConfig.loaded = Arrays.stream(strings).map(LOADABLE_BLOCK::valueOf).collect(() -> EnumSet.noneOf(LOADABLE_BLOCK.class), EnumSet::add, EnumSet::addAll),
                     fontConfig -> fontConfig.loaded.stream().map(Enum::name).toArray(String[]::new)).add()
-//            .append(new KeyedCodec<>("Loaded_By", Codec.STRING),
-//                    (fontConfig, string) ->
-//                            fontConfig.loaded_by = SOURCE.valueOf(string),
-//                    fontConfig -> fontConfig.loaded_by.name()).add()
+            .append(new KeyedCodec<>("Loaded_By", Codec.STRING),
+                    (fontConfig, string) ->
+                            fontConfig.loaded_by = SOURCE.valueOf(string),
+                    fontConfig -> fontConfig.loaded_by.name()).add()
             .build();
 
     public enum LOADABLE_BLOCK {
