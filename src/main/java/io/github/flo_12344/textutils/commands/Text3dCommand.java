@@ -176,12 +176,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 return;
             transform.getPosition().add(new Vector3d(x.get(ctx), y.get(ctx), z.get(ctx)));
             int text_pos = 0;
-            float width;
-            if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
-                width = 0.1f;
-            } else {
-                width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
-            }
+            float width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64 * textUtilsEntity.getSize();
             var arr = textUtilsEntity.getText_entities();
             var size = arr.size();
             for (var uuid : arr) {
