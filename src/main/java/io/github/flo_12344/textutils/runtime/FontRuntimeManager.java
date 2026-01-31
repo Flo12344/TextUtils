@@ -41,12 +41,27 @@ public class FontRuntimeManager {
     }
 
     public void registerRuntimePack() {
+        File dir_path = FontRuntimeManager.resolveRuntimeBasePath()
+                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
+                .resolve(FontRuntimeManager.RUNTIME_MODEL_DIR).toFile();
+        dir_path.mkdirs();
+
+        dir_path = FontRuntimeManager.resolveRuntimeBasePath()
+                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common")
+                .resolve(FontRuntimeManager.UI_TEXTURE_PATH).toFile();
+        dir_path.mkdirs();
+        dir_path = FontRuntimeManager.resolveRuntimeBasePath()
+                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
+                .resolve("Common")
+                .resolve(FontRuntimeManager.MODEL_TEXTURE_PATH).toFile();
+        dir_path.mkdirs();
+
         PluginManifest manifest = PluginManifest.CoreBuilder.corePlugin(TextUtils.class)
                 .description("Runtime assets for Textutils").build();
         manifest.setName(RUNTIME_ASSETS_PACK);
         manifest.setVersion(Semver.fromString("1.0.0"));
         AssetModule.get().registerPack(RUNTIME_ASSETS_PACK, runtimeAssetsPath, manifest);
-        ensureCommonAssetsRegistered();
+        broadcastTexturesModels();
     }
 
     public void ensureCommonAssetsRegistered() {

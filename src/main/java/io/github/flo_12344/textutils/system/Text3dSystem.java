@@ -133,12 +133,7 @@ public class Text3dSystem {
                         chara_transform.getPosition().add(offset);
 
                         Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
-                        ModelAsset modelAsset;
-                        if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
-                            modelAsset = ModelAsset.getAssetMap().getAsset("Char" + Objects.toString((int) c));
-                        } else {
-                            modelAsset = ModelAsset.getAssetMap().getAsset(FontManager.getCharFileAsString(c, textUtilsEntity.getFont_name()));
-                        }
+                        ModelAsset modelAsset = ModelAsset.getAssetMap().getAsset(FontManager.getCharFileAsString(c, textUtilsEntity.getFont_name()));
 
 
                         if (modelAsset == null) {

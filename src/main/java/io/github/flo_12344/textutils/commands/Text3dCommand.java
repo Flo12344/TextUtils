@@ -89,9 +89,17 @@ public class Text3dCommand extends AbstractPlayerCommand {
             final Vector3d pos = position.get(ctx).toVector3d();
             final Vector3f rot = ctx.getInput(rotation) == null ? new Vector3f() : rotation.get(ctx);
             final String _id = ctx.provided(id) ? id.get(ctx) : UUID.randomUUID().toString();
-            final String font = ctx.getInput(font_id) == null ? "" : font_id.get(ctx);
+            String font = ctx.getInput(font_id) == null ? "" : font_id.get(ctx);
             final float tsize = ctx.getInput(size) == null ? 1.0f : size.get(ctx);
-            if (!font.isEmpty() && !FontManager.INSTANCE.IsFontLoaded(font)) {
+            if (font.isEmpty()) {
+                if (FontManager.INSTANCE.getLoaded_font().isEmpty()) {
+                    ctx.sendMessage(Message.raw("No Font loaded"));
+                    return;
+                } else {
+                    font = FontManager.INSTANCE.getLoaded_font().keySet().stream().toList().getFirst();
+                }
+            }
+            if (!FontManager.INSTANCE.IsFontLoaded(font)) {
                 ctx.sendMessage(Message.raw(String.format("Font %s doesn't exist.", font)));
                 return;
             }

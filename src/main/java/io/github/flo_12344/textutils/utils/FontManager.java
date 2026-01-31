@@ -3,6 +3,8 @@ package io.github.flo_12344.textutils.utils;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.codec.codecs.map.MapCodec;
+import com.hypixel.hytale.server.core.asset.AssetModule;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.util.io.FileUtil;
 import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.runtime.FontRuntimeManager;
@@ -102,6 +104,9 @@ public class FontManager {
                 .resolve(FontRuntimeManager.MODEL_TEXTURE_PATH) + File.separator + font_id;
         f = new File(dir_path);
         f.mkdirs();
+        if (AssetModule.get().getAssetPack(FontRuntimeManager.RUNTIME_ASSETS_PACK) == null && TextUtils.INSTANCE.fontRuntimeManager != null) {
+            TextUtils.INSTANCE.fontRuntimeManager.registerRuntimePack();
+        }
         return true;
     }
 

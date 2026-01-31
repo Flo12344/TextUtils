@@ -1,5 +1,6 @@
 package io.github.flo_12344.textutils;
 
+import com.hypixel.hytale.server.core.asset.AssetModule;
 import com.hypixel.hytale.server.core.cosmetics.CosmeticRegistry;
 import com.hypixel.hytale.server.core.cosmetics.CosmeticsModule;
 import com.hypixel.hytale.server.core.cosmetics.PlayerSkinGradientSet;
@@ -49,12 +50,6 @@ public class TextUtils extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.Text3dSpawned());
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.DeleterText3dSystem());
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.TrackerText3DSystem());
-    }
-
-    @Override
-    protected void start() {
-        super.start();
-
         var dir_path = getDataDirectory().resolve("fonts");
         File dir = new File(dir_path.toString());
         if (!dir.exists()) {
@@ -63,9 +58,13 @@ public class TextUtils extends JavaPlugin {
                 Universe.get().getLogger().atSevere().log("FAILED to create fonts dir");
             }
         }
-
         fontRuntimeManager = new FontRuntimeManager();
         fontRuntimeManager.registerRuntimePack();
+    }
+
+    @Override
+    protected void start() {
+        super.start();
     }
 
     @Override
