@@ -70,24 +70,9 @@ public class FontManager {
     }
 
     private boolean Init(String font_name, String font_id, float size, FontConfig.SOURCE source) throws IOException, FontFormatException {
-        Font font;
-        var file = new File(font_name + ".ttf");
-        if (file.exists()) {
-            font = Font.createFont(Font.TRUETYPE_FONT, file)
-                    .deriveFont(size);
-        } else {
-            file = new File(font_name + ".otf");
-            if (file.exists()) {
-                font = Font.createFont(Font.TRUETYPE_FONT, file)
-                        .deriveFont(size);
-            } else return false;
-        }
+        Font font = FontLoader.loadFont(font_name).deriveFont(size);
 
-        BufferedImage tempImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D tempG2d = tempImage.createGraphics();
-        tempG2d.setFont(font);
-        FontMetrics fm = tempG2d.getFontMetrics();
-        tempG2d.dispose();
+        FontMetrics fm = FontLoader.getFontMetrics(font);
         int potSize = 32; // Default minimum
         int maxWidth = Arrays.stream(fm.getWidths()).max().getAsInt();
         while (potSize < Math.max(maxWidth, fm.getHeight())) {
@@ -100,25 +85,11 @@ public class FontManager {
         fs.glyph_size = potSize;
         fs.font_file = font_name;
         fs.size = size;
+        fs.loaded_by = source;
 
         loaded_font.put(font_id, fs);
-        String dir_path = FontRuntimeManager.resolveRuntimeBasePath()
-                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
-                .resolve(FontRuntimeManager.RUNTIME_MODEL_DIR) + File.separator + font_id;
-        File f = new File(dir_path);
-        f.mkdirs();
+        createFontDirectories(font_id);
 
-        dir_path = FontRuntimeManager.resolveRuntimeBasePath()
-                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common")
-                .resolve(FontRuntimeManager.UI_TEXTURE_PATH) + File.separator + font_id;
-        f = new File(dir_path);
-        f.mkdirs();
-        dir_path = FontRuntimeManager.resolveRuntimeBasePath()
-                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
-                .resolve("Common")
-                .resolve(FontRuntimeManager.MODEL_TEXTURE_PATH) + File.separator + font_id;
-        f = new File(dir_path);
-        f.mkdirs();
         if (AssetModule.get().getAssetPack(FontRuntimeManager.RUNTIME_ASSETS_PACK) == null && TextUtils.INSTANCE.fontRuntimeManager != null) {
             TextUtils.INSTANCE.fontRuntimeManager.registerRuntimePack();
         }
@@ -221,39 +192,39 @@ public class FontManager {
         }
     }
 
-    public void LoadRange(String font_name, int start, int end, String block) throws IOException, FontFormatException {
-        Font font = Font.createFont(Font.TRUETYPE_FONT, new File(TextUtils.INSTANCE.getDataDirectory() + File.separator + "fonts" + File.separator + font_name + ".ttf")).deriveFont(32f);
+    public void LoadRange(String font_id, int start, int end, String block) throws IOException, FontFormatException {
+        Font font = FontLoader.loadFont(loaded_font.get(font_id).font_file).deriveFont(loaded_font.get(font_id).size);
         for (char c = (char) start; c < end; c++) {
-            LoadCharacter(font_name, c, font);
+            LoadCharacter(font_id, c, font);
         }
-        RenderAtlases(font_name, start, end, block, font);
+        RenderAtlases(font_id, start, end, block, font);
     }
 
-    private void LoadRange(String font_name, Pair<Integer, Integer> se, String block) throws IOException, FontFormatException {
-        LoadRange(font_name, se.getFirst(), se.getSecond(), block);
+    private void LoadRange(String font_id, Pair<Integer, Integer> se, String block) throws IOException, FontFormatException {
+        LoadRange(font_id, se.getFirst(), se.getSecond(), block);
     }
 
-    public void LoadFlags(String font_name, EnumSet<FontConfig.LOADABLE_BLOCK> flags) throws IOException, FontFormatException {
+    public void LoadFlags(String font_id, EnumSet<FontConfig.LOADABLE_BLOCK> flags) throws IOException, FontFormatException {
         for (var flag : flags) {
-            LoadRange(font_name, FontConfig.GetRange(flag), flag.toString());
+            LoadRange(font_id, FontConfig.GetRange(flag), flag.toString());
         }
-        loaded_font.get(font_name).loaded.addAll(flags);
+        loaded_font.get(font_id).loaded.addAll(flags);
     }
 
-    public void LoadFlags(String font_name, List<String> flags_str) throws IOException, FontFormatException {
+    public void LoadFlags(String font_id, List<String> flags_str) throws IOException, FontFormatException {
         EnumSet<FontConfig.LOADABLE_BLOCK> flags = EnumSet.noneOf(FontConfig.LOADABLE_BLOCK.class);
         for (var flag : flags_str) {
             flags.add(FontConfig.GetFromStr(flag));
         }
-        LoadFlags(font_name, flags);
+        LoadFlags(font_id, flags);
     }
 
-    private void LoadCharacter(String font_name, char c, Font font) throws IOException {
-        String ui_tex_dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common").resolve(FontRuntimeManager.UI_TEXTURE_PATH) + File.separator + font_name;
+    private void LoadCharacter(String font_id, char c, Font font) throws IOException {
+        String ui_tex_dir_path = FontRuntimeManager.resolveRuntimeBasePath().resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common").resolve(FontRuntimeManager.UI_TEXTURE_PATH) + File.separator + font_id;
         var out_ui = new File(ui_tex_dir_path + File.separator + "U" + String.format("%04X", (int) c) + ".png");
         if (out_ui.exists())
             return;
-        var fs = loaded_font.get(font_name);
+        var fs = loaded_font.get(font_id);
         BufferedImage image = new BufferedImage(
                 fs.glyph_size, fs.glyph_size, BufferedImage.TYPE_INT_ARGB
         );
@@ -271,40 +242,62 @@ public class FontManager {
         ImageIO.write(image, "PNG", out_ui);
     }
 
-    public boolean IsFontLoaded(String font_name, EnumSet<FontConfig.LOADABLE_BLOCK> flag) {
-        if (!loaded_font.containsKey(font_name)) {
+    public boolean IsFontLoaded(String font_id, EnumSet<FontConfig.LOADABLE_BLOCK> flag) {
+        if (!loaded_font.containsKey(font_id)) {
             return false;
         } else {
-            return loaded_font.get(font_name).loaded.containsAll(flag);
+            return loaded_font.get(font_id).loaded.containsAll(flag);
         }
     }
 
-    public boolean IsFontLoaded(String font_name) {
-        return loaded_font.containsKey(font_name);
+    public boolean IsFontLoaded(String font_id) {
+        return loaded_font.containsKey(font_id);
     }
 
-    public FontConfig getFontSettings(String font_name) {
-        return loaded_font.get(font_name);
+    public FontConfig getFontSettings(String font_id) {
+        return loaded_font.get(font_id);
     }
 
     public static String getCharFileAsString(char c, String font) {
         return font + "_U" + String.format("%04X", (int) c);
     }
 
-    public void RemoveFont(String font_name) throws IOException {
-        FileUtil.deleteDirectory(FontRuntimeManager.resolveRuntimeBasePath()
-                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
-                .resolve(FontRuntimeManager.RUNTIME_MODEL_DIR)
-                .resolve(font_name));
-        FileUtil.deleteDirectory(FontRuntimeManager.resolveRuntimeBasePath()
-                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
-                .resolve("Common")
-                .resolve(FontRuntimeManager.UI_TEXTURE_PATH).resolve(font_name));
-        FileUtil.deleteDirectory(FontRuntimeManager.resolveRuntimeBasePath()
-                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
-                .resolve("Common")
-                .resolve(FontRuntimeManager.MODEL_TEXTURE_PATH).resolve(font_name));
-        loaded_font.remove(font_name);
+    public void RemoveFont(String font_id) throws IOException {
+        deleteFontDirectories(font_id);
+        loaded_font.remove(font_id);
+    }
+
+    public static void createFontDirectories(String fontId) throws IOException {
+        String runtimeBasePath = FontRuntimeManager.resolveRuntimeBasePath().toString();
+        String runtimeAssetsDir = runtimeBasePath + File.separator + FontRuntimeManager.RUNTIME_ASSETS_DIR;
+
+        String modelDir = runtimeAssetsDir + File.separator + FontRuntimeManager.RUNTIME_MODEL_DIR + File.separator + fontId;
+        String uiTextureDir = runtimeAssetsDir + File.separator + "Common" + File.separator + FontRuntimeManager.UI_TEXTURE_PATH + File.separator + fontId;
+        String modelTextureDir = runtimeAssetsDir + File.separator + "Common" + File.separator + FontRuntimeManager.MODEL_TEXTURE_PATH + File.separator + fontId;
+
+        createDirectoryIfNotExists(modelDir);
+        createDirectoryIfNotExists(uiTextureDir);
+        createDirectoryIfNotExists(modelTextureDir);
+    }
+
+    public static void deleteFontDirectories(String font_id) throws IOException {
+        String runtimeBasePath = FontRuntimeManager.resolveRuntimeBasePath().toString();
+        String runtimeAssetsDir = runtimeBasePath + File.separator + FontRuntimeManager.RUNTIME_ASSETS_DIR;
+
+        String modelDir = runtimeAssetsDir + File.separator + FontRuntimeManager.RUNTIME_MODEL_DIR + File.separator + font_id;
+        String uiTextureDir = runtimeAssetsDir + File.separator + "Common" + File.separator + FontRuntimeManager.UI_TEXTURE_PATH + File.separator + font_id;
+        String modelTextureDir = runtimeAssetsDir + File.separator + "Common" + File.separator + FontRuntimeManager.MODEL_TEXTURE_PATH + File.separator + font_id;
+
+        FileUtil.deleteDirectory(Path.of(modelDir));
+        FileUtil.deleteDirectory(Path.of(uiTextureDir));
+        FileUtil.deleteDirectory(Path.of(modelTextureDir));
+    }
+
+    private static void createDirectoryIfNotExists(String path) throws IOException {
+        File dir = new File(path);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
     }
 
 }

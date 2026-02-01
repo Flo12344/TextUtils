@@ -91,71 +91,71 @@ public class Text3dSystem {
         @Override
         public void tick(float v, int i, @NonNullDecl ArchetypeChunk<EntityStore> archetypeChunk, @NonNullDecl Store<EntityStore> store, @NonNullDecl CommandBuffer<EntityStore> cbf) {
             var textUtilsEntity = archetypeChunk.getComponent(i, TextUtils3DTextComponent.getComponentType());
-            if (textUtilsEntity != null && textUtilsEntity.isEdited()) {
-                textUtilsEntity.setEdited(false);
-                TransformComponent transform = archetypeChunk.getComponent(i, TransformComponent.getComponentType());
-                if (transform == null)
-                    return;
+            if (textUtilsEntity == null && !textUtilsEntity.isEdited()) {
+                return;
+            }
+            textUtilsEntity.setEdited(false);
+            TransformComponent transform = archetypeChunk.getComponent(i, TransformComponent.getComponentType());
+            if (transform == null)
+                return;
 
-                var list = textUtilsEntity.getText_entities();
-                var world = store.getExternalData().getWorld();
+            var list = textUtilsEntity.getText_entities();
+            var world = store.getExternalData().getWorld();
 
-                if (!list.isEmpty()) {
-                    for (var c : list) {
-                        cbf.removeEntity(world.getEntityRef(c), RemoveReason.REMOVE);
+            if (!list.isEmpty()) {
+                for (var c : list) {
+                    cbf.removeEntity(world.getEntityRef(c), RemoveReason.REMOVE);
+                }
+                list.clear();
+            }
+            if (!textUtilsEntity.isVisible())
+                return;
+            int text_pos = 0;
+
+            var formated = FormattingUtils.parseFormattedText(textUtilsEntity.getText());
+
+            float width;
+            if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
+                width = 0.1f;
+            } else {
+                width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
+            }
+            width *= textUtilsEntity.getSize();
+
+            int text_len = formated.stream()
+                    .mapToInt(str -> str.getText().length())
+                    .sum();
+
+            for (var str : formated) {
+                for (char c : str.getText().toCharArray()) {
+                    TransformComponent chara_transform = transform.clone();
+                    Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
+                    Vector3d offset = right.scale((double) -text_len / 2 * width + text_pos * width);
+
+                    chara_transform.getPosition().add(offset);
+
+                    Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
+                    ModelAsset modelAsset = ModelAsset.getAssetMap().getAsset(FontManager.getCharFileAsString(c, textUtilsEntity.getFont_name()));
+
+
+                    if (modelAsset == null) {
+                        Universe.get().getLogger().at(Level.WARNING).log("Missing character for %s", c);
+                        continue;
                     }
-                    list.clear();
-                }
-                if (!textUtilsEntity.isVisible())
-                    return;
-                int text_pos = 0;
+                    Model model = new Model(modelAsset.getId(), textUtilsEntity.getSize(), modelAsset.generateRandomAttachmentIds(), modelAsset.getDefaultAttachments(), modelAsset.getBoundingBox(), modelAsset.getModel(), modelAsset.getTexture(), FormattingUtils.getGradientSet(str.getColor()), FormattingUtils.getGradientId(str.getColor()), modelAsset.getEyeHeight(), modelAsset.getCrouchOffset(), modelAsset.getAnimationSetMap(), modelAsset.getCamera()
+                            , modelAsset.getLight(), modelAsset.getParticles(), modelAsset.getTrails(), modelAsset.getPhysicsValues(), modelAsset.getDetailBoxes(), modelAsset.getPhobia(), modelAsset.getPhobiaModelAssetId());
+                    var uuid = holder.ensureAndGetComponent(UUIDComponent.getComponentType()).getUuid();
+                    holder.addComponent(TransformComponent.getComponentType(), chara_transform);
+                    holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
+                    holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
+                    holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
+                    holder.addComponent(Intangible.getComponentType(), Intangible.INSTANCE);
 
-                var formated = FormattingUtils.parseFormattedText(textUtilsEntity.getText());
-
-                float width;
-                if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
-                    width = 0.1f;
-                } else {
-                    width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
-                }
-                width *= textUtilsEntity.getSize();
-
-                int text_len = 0;
-                for (var str : formated) {
-                    text_len += str.getText().length();
-                }
-
-                for (var str : formated) {
-                    for (char c : str.getText().toCharArray()) {
-                        TransformComponent chara_transform = transform.clone();
-                        Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
-                        Vector3d offset = right.scale((double) -text_len / 2 * width + text_pos * width);
-
-                        chara_transform.getPosition().add(offset);
-
-                        Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
-                        ModelAsset modelAsset = ModelAsset.getAssetMap().getAsset(FontManager.getCharFileAsString(c, textUtilsEntity.getFont_name()));
+                    cbf.addEntity(holder, AddReason.SPAWN);
 
 
-                        if (modelAsset == null) {
-                            continue;
-                        }
-                        Model model = new Model(modelAsset.getId(), textUtilsEntity.getSize(), modelAsset.generateRandomAttachmentIds(), modelAsset.getDefaultAttachments(), modelAsset.getBoundingBox(), modelAsset.getModel(), modelAsset.getTexture(), FormattingUtils.getGradientSet(str.getColor()), FormattingUtils.getGradientId(str.getColor()), modelAsset.getEyeHeight(), modelAsset.getCrouchOffset(), modelAsset.getAnimationSetMap(), modelAsset.getCamera()
-                                , modelAsset.getLight(), modelAsset.getParticles(), modelAsset.getTrails(), modelAsset.getPhysicsValues(), modelAsset.getDetailBoxes(), modelAsset.getPhobia(), modelAsset.getPhobiaModelAssetId());
-
-                        var uuid = holder.ensureAndGetComponent(UUIDComponent.getComponentType()).getUuid();
-                        holder.addComponent(TransformComponent.getComponentType(), chara_transform);
-                        holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
-                        holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
-                        holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
-                        holder.addComponent(Intangible.getComponentType(), Intangible.INSTANCE);
-
-                        cbf.addEntity(holder, AddReason.SPAWN);
-
-
-                        list.add(uuid);
-                        text_pos++;
-                    }
+                    list.add(uuid);
+                    text_pos++;
                 }
             }
         }
