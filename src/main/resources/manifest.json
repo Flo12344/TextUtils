@@ -1,7 +1,7 @@
 {
   "Group": "TextUtils",
   "Name": "TextUtils",
-  "Version": "1.0.0",
+  "Version": "${project.version}",
   "Description": "Utility mods for text and font handling",
   "Authors": [
     {

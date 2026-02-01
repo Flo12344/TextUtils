@@ -24,6 +24,7 @@ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.util.Objects;
+import java.util.logging.Level;
 
 public class Text3dSystem {
     public static class DeleterText3dSystem extends RefChangeSystem<EntityStore, Text3dDeleterComponent> {
