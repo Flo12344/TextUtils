@@ -8,8 +8,10 @@ import com.hypixel.hytale.server.core.modules.entity.component.*;
 import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
+import io.github.flo_12344.textutils.registry.TextUtilsHologramRegistry;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -18,8 +20,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TextManager {
-    public static ConcurrentHashMap<String, UUID> text3dUtilsEntity = new ConcurrentHashMap<>();
-
     public static void SpawnText3dEntity(Vector3d pos, Vector3f rot, @Nonnull World world, String text, String _label, String font, float size) {
         world.execute(() -> {
             Store<EntityStore> store = world.getEntityStore().getStore();
@@ -34,17 +34,17 @@ public class TextManager {
             holder.addComponent(TextUtils3DTextComponent.getComponentType(),
                     new TextUtils3DTextComponent(font, text, _label, size));
             store.addEntity(holder, AddReason.SPAWN);
-            TextManager.text3dUtilsEntity.put(_label, uuid.getUuid());
+            TextUtilsHologramRegistry.get().onEntityAdded(_label, uuid.getUuid());
         });
     }
 
     public static void RemoveText3dEntity(String id, World world, Store<EntityStore> store) {
-        var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(id));
+        var text_entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(id));
         store.addComponent(text_entity, Text3dDeleterComponent.getComponentType());
     }
 
     public static void ResizeText3dEntity(String id, World world, Store<EntityStore> store, float size) {
-        var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(id));
+        var text_entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(id));
         var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
         textUtilsEntity.setSize(size);
     }
@@ -58,7 +58,7 @@ public class TextManager {
     }
 
     public static void TransformText3dEntity(String id, World world, Store<EntityStore> store, Vector3f rot, Vector3d pos) {
-        var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(id));
+        var text_entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(id));
         var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
         TransformComponent transform = store.getComponent(text_entity, TransformComponent.getComponentType());
         if (transform == null)
@@ -86,19 +86,19 @@ public class TextManager {
     }
 
     public static void SetText3dVisibility(String id, World world, Store<EntityStore> store, Boolean visible) {
-        var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(id));
+        var text_entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(id));
         var txt = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
         txt.setVisible(visible);
     }
 
     public static void EditText3dContent(String id, World world, Store<EntityStore> store, String content) {
-        var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(id));
+        var text_entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(id));
         var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
         txt.setText(content);
     }
 
     public static void ChangeText3dFont(String id, World world, Store<EntityStore> store, String font_id) {
-        var text_entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(id));
+        var text_entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(id));
         var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
         txt.setFont_name(font_id);
     }

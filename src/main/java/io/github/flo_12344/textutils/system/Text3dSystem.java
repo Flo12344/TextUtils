@@ -16,6 +16,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
 import io.github.flo_12344.textutils.component.Text3dTrackerComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
+import io.github.flo_12344.textutils.registry.TextUtilsHologramRegistry;
 import io.github.flo_12344.textutils.utils.FontManager;
 import io.github.flo_12344.textutils.utils.FormattingUtils;
 import io.github.flo_12344.textutils.utils.TextManager;
@@ -44,7 +45,7 @@ public class Text3dSystem {
             for (var c : comp.getText_entities()) {
                 commandBuffer.removeEntity(store.getExternalData().getWorld().getEntityRef(c), RemoveReason.REMOVE);
             }
-            TextManager.text3dUtilsEntity.remove(comp.getId());
+            TextUtilsHologramRegistry.get().onEntityRemoved(comp.getId());
             commandBuffer.removeEntity(ref, RemoveReason.REMOVE);
         }
 
@@ -63,8 +64,8 @@ public class Text3dSystem {
         public void onEntityAdd(@NonNullDecl Holder<EntityStore> holder, @NonNullDecl AddReason addReason, @NonNullDecl Store<EntityStore> store) {
             var textUtils = holder.getComponent(TextUtils3DTextComponent.getComponentType());
             var uuid = holder.getComponent(UUIDComponent.getComponentType()).getUuid();
-            if (!TextManager.text3dUtilsEntity.containsKey(textUtils.getId())) {
-                TextManager.text3dUtilsEntity.put(textUtils.getId(), uuid);
+            if (!TextUtilsHologramRegistry.get().contains(textUtils.getId())) {
+                TextUtilsHologramRegistry.get().onEntityAdded(textUtils.getId(), uuid);
             }
 
 
@@ -73,8 +74,8 @@ public class Text3dSystem {
         @Override
         public void onEntityRemoved(@NonNullDecl Holder<EntityStore> holder, @NonNullDecl RemoveReason removeReason, @NonNullDecl Store<EntityStore> store) {
             var textUtils = holder.getComponent(TextUtils3DTextComponent.getComponentType());
-            if (!TextManager.text3dUtilsEntity.containsKey(textUtils.getId())) {
-                TextManager.text3dUtilsEntity.remove(textUtils.getId());
+            if (TextUtilsHologramRegistry.get().contains(textUtils.getId())) {
+                TextUtilsHologramRegistry.get().onEntityRemoved(textUtils.getId());
             }
         }
 

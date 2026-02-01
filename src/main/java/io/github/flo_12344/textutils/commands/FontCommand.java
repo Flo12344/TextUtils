@@ -15,6 +15,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
+import io.github.flo_12344.textutils.registry.TextUtilsHologramRegistry;
 import io.github.flo_12344.textutils.runtime.FontRuntimeManager;
 import io.github.flo_12344.textutils.utils.FontConfig;
 import io.github.flo_12344.textutils.utils.FontManager;
@@ -159,8 +160,8 @@ public class FontCommand extends AbstractPlayerCommand {
                 return;
             }
 
-            for (var holoid : TextManager.text3dUtilsEntity.keySet()) {
-                var entity = world.getEntityRef(TextManager.text3dUtilsEntity.get(holoid));
+            for (var holoid : TextUtilsHologramRegistry.get().getKeys()) {
+                var entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(holoid));
                 if (entity == null)
                     continue;
                 TextUtils3DTextComponent text = store.getComponent(entity, TextUtils3DTextComponent.getComponentType());

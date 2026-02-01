@@ -12,6 +12,7 @@ import io.github.flo_12344.textutils.commands.*;
 import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
 import io.github.flo_12344.textutils.component.Text3dTrackerComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
+import io.github.flo_12344.textutils.registry.TextUtilsHologramRegistry;
 import io.github.flo_12344.textutils.runtime.FontRuntimeManager;
 import io.github.flo_12344.textutils.system.*;
 import io.github.flo_12344.textutils.utils.FontManager;
@@ -26,6 +27,8 @@ import java.util.List;
 
 public class TextUtils extends JavaPlugin {
     public static TextUtils INSTANCE;
+    public static String MODID = "TextUtils";
+    public final TextUtilsHologramRegistry HologramRegistry;
     public final Config<FontManager> FONT_MANAGER;
     public FontRuntimeManager fontRuntimeManager;
 
@@ -33,6 +36,7 @@ public class TextUtils extends JavaPlugin {
         super(init);
         INSTANCE = this;
         this.FONT_MANAGER = this.withConfig("TextConfig", FontManager.CODEC);
+        this.HologramRegistry = new TextUtilsHologramRegistry();
     }
 
     @Override
