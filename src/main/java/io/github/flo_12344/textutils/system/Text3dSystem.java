@@ -105,7 +105,9 @@ public class Text3dSystem {
 
             if (!list.isEmpty()) {
                 for (var c : list) {
-                    cbf.removeEntity(world.getEntityRef(c), RemoveReason.REMOVE);
+                    var ref = world.getEntityRef(c);
+                    if (ref != null)
+                        cbf.removeEntity(ref, RemoveReason.REMOVE);
                 }
                 list.clear();
             }
@@ -115,12 +117,7 @@ public class Text3dSystem {
 
             var formated = FormattingUtils.parseFormattedText(textUtilsEntity.getText());
 
-            float width;
-            if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
-                width = 0.1f;
-            } else {
-                width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
-            }
+            float width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
             width *= textUtilsEntity.getSize();
 
             int text_len = formated.stream()

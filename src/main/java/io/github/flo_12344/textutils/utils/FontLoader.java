@@ -8,13 +8,13 @@ import java.io.IOException;
 public class FontLoader {
     public static Font loadFont(String fontPath) throws IOException, FontFormatException {
         File fontFile = new File(fontPath + ".ttf");
-        if (!fontFile.exists()) {
+        if (!fontFile.isFile()) {
             fontFile = new File(fontPath + ".otf");
-            if (!fontFile.exists()) {
-                throw new IOException("Font file not found: " + fontPath);
-            }
         }
-        Font font = Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(32f);
+        if (!fontFile.isFile()) {
+            throw new IOException("Font file not found: " + fontPath);
+        }
+        Font font = Font.createFont(Font.TRUETYPE_FONT, fontFile);
         return font;
     }
 

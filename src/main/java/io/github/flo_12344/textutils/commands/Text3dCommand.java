@@ -88,10 +88,10 @@ public class Text3dCommand extends AbstractPlayerCommand {
             if (content.startsWith("\""))
                 content = content.substring(1, content.lastIndexOf("\""));
             final Vector3d pos = position.get(ctx).toVector3d();
-            final Vector3f rot = ctx.getInput(rotation) == null ? new Vector3f() : rotation.get(ctx);
+            final Vector3f rot = ctx.provided(rotation) ? rotation.get(ctx) : new Vector3f();
             final String _id = ctx.provided(id) ? id.get(ctx) : UUID.randomUUID().toString();
-            String font = ctx.getInput(font_id) == null ? "" : font_id.get(ctx);
-            final float tsize = ctx.getInput(size) == null ? 1.0f : size.get(ctx);
+            String font = ctx.provided(font_id) ? font_id.get(ctx) : "";
+            final float tsize = ctx.provided(size) ? size.get(ctx) : 1.0f;
             if (font.isEmpty()) {
                 if (FontManager.INSTANCE.getLoaded_font().isEmpty()) {
                     ctx.sendMessage(Message.raw("No Font loaded"));

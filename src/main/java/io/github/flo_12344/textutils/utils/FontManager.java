@@ -49,28 +49,28 @@ public class FontManager {
         FONT_DIR = TextUtils.INSTANCE.getDataDirectory().resolve("fonts");
     }
 
-    private void InitFromSave(String font_name, String font_id, float size, EnumSet<FontConfig.LOADABLE_BLOCK> loaded, FontConfig.SOURCE source) throws IOException, FontFormatException {
-        Init(font_name, font_id, size, source);
+    private void InitFromSave(String font_path, String font_id, float size, EnumSet<FontConfig.LOADABLE_BLOCK> loaded, FontConfig.SOURCE source) throws IOException, FontFormatException {
+        Init(font_path, font_id, size, source);
         LoadFlags(font_id, loaded);
     }
 
     /**
      * Font added through this methods will not be deletable through user commands
      */
-    public boolean InitFromMod(String font_name, String font_id, float size) throws IOException, FontFormatException {
-        return Init(font_name, font_id, size, FontConfig.SOURCE.MODS);
+    public boolean InitFromMod(String font_path, String font_id, float size) throws IOException, FontFormatException {
+        return Init(font_path, font_id, size, FontConfig.SOURCE.MODS);
     }
 
 
     /**
      * Font added through this methods will be deletable through user commands
      */
-    public boolean InitFromUserCommands(String font_name, String font_id, float size) throws IOException, FontFormatException {
-        return Init(font_name, font_id, size, FontConfig.SOURCE.USER);
+    public boolean InitFromUserCommands(String font_path, String font_id, float size) throws IOException, FontFormatException {
+        return Init(font_path, font_id, size, FontConfig.SOURCE.USER);
     }
 
-    private boolean Init(String font_name, String font_id, float size, FontConfig.SOURCE source) throws IOException, FontFormatException {
-        Font font = FontLoader.loadFont(font_name).deriveFont(size);
+    private boolean Init(String font_path, String font_id, float size, FontConfig.SOURCE source) throws IOException, FontFormatException {
+        Font font = FontLoader.loadFont(font_path).deriveFont(size);
 
         FontMetrics fm = FontLoader.getFontMetrics(font);
         int potSize = 32; // Default minimum
@@ -83,7 +83,7 @@ public class FontManager {
         fs.max_height = fm.getHeight();
         fs.max_width = maxWidth;
         fs.glyph_size = potSize;
-        fs.font_file = font_name;
+        fs.font_file = font_path;
         fs.size = size;
         fs.loaded_by = source;
 
