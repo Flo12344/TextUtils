@@ -13,6 +13,7 @@ import com.hypixel.hytale.server.core.modules.entity.component.*;
 import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import io.github.flo_12344.textutils.component.CharacterComponent;
 import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
 import io.github.flo_12344.textutils.component.Text3dTrackerComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
@@ -24,6 +25,7 @@ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.util.Objects;
+import java.util.UUID;
 import java.util.logging.Level;
 
 public class Text3dSystem {
@@ -87,6 +89,27 @@ public class Text3dSystem {
         }
     }
 
+    public static class Character3dSpawned extends HolderSystem<EntityStore> {
+        @Override
+        public void onEntityAdd(@NonNullDecl Holder<EntityStore> holder, @NonNullDecl AddReason addReason, @NonNullDecl Store<EntityStore> store) {
+            var uuid = holder.getComponent(UUIDComponent.getComponentType()).getUuid();
+            var chara = holder.getComponent(CharacterComponent.getComponentType());
+            var parent = store.getExternalData().getWorld().getEntityRef(chara.parent);
+            if (parent == null) store.removeEntity(store.getExternalData().getRefFromUUID(uuid), RemoveReason.REMOVE);
+            store.getComponent(parent, TextUtils3DTextComponent.getComponentType()).addText_entities(uuid);
+        }
+
+        @Override
+        public void onEntityRemoved(@NonNullDecl Holder<EntityStore> holder, @NonNullDecl RemoveReason removeReason, @NonNullDecl Store<EntityStore> store) {
+        }
+
+        @NullableDecl
+        @Override
+        public Query<EntityStore> getQuery() {
+            return CharacterComponent.getComponentType();
+        }
+    }
+
     public static class EditText3DSystem extends EntityTickingSystem<EntityStore> {
 
         @Override
@@ -97,6 +120,7 @@ public class Text3dSystem {
             }
             textUtilsEntity.setEdited(false);
             TransformComponent transform = archetypeChunk.getComponent(i, TransformComponent.getComponentType());
+            UUID entity_uuid = archetypeChunk.getComponent(i, UUIDComponent.getComponentType()).getUuid();
             if (transform == null)
                 return;
 
@@ -107,54 +131,58 @@ public class Text3dSystem {
                 for (var c : list) {
                     var ref = world.getEntityRef(c);
                     if (ref != null)
-                        cbf.removeEntity(ref, RemoveReason.REMOVE);
+                        cbf.tryRemoveEntity(ref, RemoveReason.REMOVE);
                 }
                 list.clear();
             }
             if (!textUtilsEntity.isVisible())
                 return;
-            int text_pos = 0;
 
-            var formated = FormattingUtils.parseFormattedText(textUtilsEntity.getText());
+            var formated_lines = FormattingUtils.parseFormattedText(textUtilsEntity.getText());
 
-            float width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
-            width *= textUtilsEntity.getSize();
+            var font_settings = FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name());
+            if (font_settings == null) return;
+            float width = (float) font_settings.max_width / 64 * textUtilsEntity.getSize();
+            float height = (float) font_settings.max_height / 64 * textUtilsEntity.getSize();
 
-            int text_len = formated.stream()
-                    .mapToInt(str -> str.getText().length())
-                    .sum();
+            int line = 0;
+            for (var formated : formated_lines) {
+                int text_pos = 0;
+                int text_len = formated.stream()
+                        .mapToInt(str -> str.getText().length())
+                        .sum();
 
-            for (var str : formated) {
-                for (char c : str.getText().toCharArray()) {
-                    TransformComponent chara_transform = transform.clone();
-                    Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
-                    Vector3d offset = right.scale((double) -text_len / 2 * width + text_pos * width);
+                for (var str : formated) {
+                    for (char c : str.getText().toCharArray()) {
+                        TransformComponent chara_transform = transform.clone();
+                        Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
+                        Vector3d offset = right.scale((double) -text_len / 2 * width + text_pos * width);
 
-                    chara_transform.getPosition().add(offset);
+                        chara_transform.getPosition().add(offset).add(new Vector3d(0, -1, 0).rotateX(transform.getRotation().x).scale((double) line * height));
 
-                    Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
-                    ModelAsset modelAsset = ModelAsset.getAssetMap().getAsset(FontManager.getCharFileAsString(c, textUtilsEntity.getFont_name()));
+                        Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
+                        ModelAsset modelAsset = ModelAsset.getAssetMap().getAsset(FontManager.getCharFileAsString(c, textUtilsEntity.getFont_name()));
 
 
-                    if (modelAsset == null) {
-                        Universe.get().getLogger().at(Level.WARNING).log("Missing character for %s", c);
-                        continue;
+                        if (modelAsset == null) {
+                            Universe.get().getLogger().at(Level.WARNING).log("Missing character for %s", c);
+                            continue;
+                        }
+                        Model model = new Model(modelAsset.getId(), textUtilsEntity.getSize(), modelAsset.generateRandomAttachmentIds(), modelAsset.getDefaultAttachments(), modelAsset.getBoundingBox(), modelAsset.getModel(), modelAsset.getTexture(), FormattingUtils.getGradientSet(str.getColor()), FormattingUtils.getGradientId(str.getColor()), modelAsset.getEyeHeight(), modelAsset.getCrouchOffset(), modelAsset.getAnimationSetMap(), modelAsset.getCamera()
+                                , modelAsset.getLight(), modelAsset.getParticles(), modelAsset.getTrails(), modelAsset.getPhysicsValues(), modelAsset.getDetailBoxes(), modelAsset.getPhobia(), modelAsset.getPhobiaModelAssetId());
+                        var uuid = holder.ensureAndGetComponent(UUIDComponent.getComponentType()).getUuid();
+                        holder.addComponent(TransformComponent.getComponentType(), chara_transform);
+                        holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
+                        holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
+                        holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
+                        holder.addComponent(Intangible.getComponentType(), Intangible.INSTANCE);
+                        holder.addComponent(CharacterComponent.getComponentType(), new CharacterComponent(entity_uuid));
+
+                        cbf.addEntity(holder, AddReason.SPAWN);
+                        text_pos++;
                     }
-                    Model model = new Model(modelAsset.getId(), textUtilsEntity.getSize(), modelAsset.generateRandomAttachmentIds(), modelAsset.getDefaultAttachments(), modelAsset.getBoundingBox(), modelAsset.getModel(), modelAsset.getTexture(), FormattingUtils.getGradientSet(str.getColor()), FormattingUtils.getGradientId(str.getColor()), modelAsset.getEyeHeight(), modelAsset.getCrouchOffset(), modelAsset.getAnimationSetMap(), modelAsset.getCamera()
-                            , modelAsset.getLight(), modelAsset.getParticles(), modelAsset.getTrails(), modelAsset.getPhysicsValues(), modelAsset.getDetailBoxes(), modelAsset.getPhobia(), modelAsset.getPhobiaModelAssetId());
-                    var uuid = holder.ensureAndGetComponent(UUIDComponent.getComponentType()).getUuid();
-                    holder.addComponent(TransformComponent.getComponentType(), chara_transform);
-                    holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
-                    holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
-                    holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
-                    holder.addComponent(Intangible.getComponentType(), Intangible.INSTANCE);
-
-                    cbf.addEntity(holder, AddReason.SPAWN);
-
-
-                    list.add(uuid);
-                    text_pos++;
                 }
+                line++;
             }
         }
 

@@ -9,6 +9,7 @@ import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.util.Config;
 import io.github.flo_12344.textutils.commands.*;
+import io.github.flo_12344.textutils.component.CharacterComponent;
 import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
 import io.github.flo_12344.textutils.component.Text3dTrackerComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
@@ -50,10 +51,12 @@ public class TextUtils extends JavaPlugin {
         TextUtils3DTextComponent.init(this.getEntityStoreRegistry().registerComponent(TextUtils3DTextComponent.class, "TextUtils3DText", TextUtils3DTextComponent.CODEC));
         Text3dDeleterComponent.init(this.getEntityStoreRegistry().registerComponent(Text3dDeleterComponent.class, "Text3dDeleter", Text3dDeleterComponent.CODEC));
         Text3dTrackerComponent.init(this.getEntityStoreRegistry().registerComponent(Text3dTrackerComponent.class, "Text3dTracker", Text3dTrackerComponent.CODEC));
+        CharacterComponent.init(this.getEntityStoreRegistry().registerComponent(CharacterComponent.class, CharacterComponent::new));
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.EditText3DSystem());
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.Text3dSpawned());
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.DeleterText3dSystem());
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.TrackerText3DSystem());
+        this.getEntityStoreRegistry().registerSystem(new Text3dSystem.Character3dSpawned());
         var dir_path = getDataDirectory().resolve("fonts");
         File dir = new File(dir_path.toString());
         if (!dir.exists()) {

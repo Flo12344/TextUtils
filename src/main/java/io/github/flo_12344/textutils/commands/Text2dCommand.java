@@ -45,27 +45,29 @@ public class Text2dCommand extends AbstractPlayerCommand {
 
         @Override
         protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            var to_use = FormattingUtils.parseFormattedText(text.get(ctx));
+            var lines = FormattingUtils.parseFormattedText(text.get(ctx));
             String page_data = "";
             page_data += "Group {\n";
-            page_data += "LayoutMode: Center;\n";
-            var group = "Group {\n";
-            group += "LayoutMode: Left;\n";
+            page_data += "LayoutMode: Top;\n";
+            var group = "";
             int scale = (int) (FontManager.INSTANCE.getFontSettings(font_id.get(ctx)).glyph_size);
             float resize = ctx.provided(size) ? size.get(ctx) : 1;
-
-            for (var t : to_use) {
-                for (char c : t.getText().toCharArray()) {
-                    int width = (int) ((FontManager.INSTANCE.getFontSettings(font_id.get(ctx)).fm.charWidth(c) - scale) * resize);
-                    group += "Group {\n";
-                    group += "Anchor: (Width: %s, Height: %s, Horizontal: %s);\n".formatted(scale * resize, scale, width / 2);
-                    group += "Background: " + FormattingUtils.getUIColor(t.getColor()) + ";\n";
-                    group += "MaskTexturePath: \"Textutils/" + font_id.get(ctx) +
-                            "/U" + String.format("%04X", (int) c) + ".png\";\n";
-                    group += "}\n";
+            for (var to_use : lines) {
+                group += "Group {\n";
+                group += "LayoutMode: Left;\n";
+                for (var t : to_use) {
+                    for (char c : t.getText().toCharArray()) {
+                        int width = (int) ((FontManager.INSTANCE.getFontSettings(font_id.get(ctx)).fm.charWidth(c) - scale) * resize);
+                        group += "Group {\n";
+                        group += "Anchor: (Width: %s, Height: %s, Horizontal: %s);\n".formatted(scale * resize, scale, width / 2);
+                        group += "Background: " + FormattingUtils.getUIColor(t.getColor()) + ";\n";
+                        group += "MaskTexturePath: \"Textutils/" + font_id.get(ctx) +
+                                "/U" + String.format("%04X", (int) c) + ".png\";\n";
+                        group += "}\n";
+                    }
                 }
+                group += "}\n";
             }
-            group += "}\n";
             group += "}\n";
             page_data += group;
 

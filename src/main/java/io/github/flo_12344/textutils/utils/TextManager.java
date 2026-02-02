@@ -1,11 +1,14 @@
 package io.github.flo_12344.textutils.utils;
 
+import com.hypixel.hytale.builtin.hytalegenerator.VectorUtil;
 import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.*;
 import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import io.github.flo_12344.textutils.TextUtils;
@@ -54,7 +57,7 @@ public class TextManager {
     }
 
     public static void RotateText3dEntity(String id, World world, Store<EntityStore> store, Vector3f rot) {
-        TransformText3dEntity(id, world, store, rot, new Vector3d());
+        TransformText3dEntity(id, world, store, new Vector3f((float) Math.toRadians(rot.x), (float) Math.toRadians(rot.y), (float) Math.toRadians(rot.z)), new Vector3d());
     }
 
     public static void TransformText3dEntity(String id, World world, Store<EntityStore> store, Vector3f rot, Vector3d pos) {
@@ -95,6 +98,22 @@ public class TextManager {
         var text_entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(id));
         var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
         txt.setText(content);
+    }
+
+    public static void EditText3dLine(String id, World world, Store<EntityStore> store, String content, int line) {
+        var text_entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(id));
+        var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
+        String current = txt.getText();
+        List<String> lines = new ArrayList<>(Arrays.asList(current.split("\\\\n")));
+        Universe.get().sendMessage(Message.raw(current));
+        Universe.get().sendMessage(Message.raw(String.valueOf(lines.size())));
+        while (lines.size() <= line) {
+            lines.add("");
+        }
+        Universe.get().sendMessage(Message.raw(String.valueOf(lines.size())));
+        lines.set(line, content);
+        current = String.join("\\n", lines);
+        txt.setText(current);
     }
 
     public static void ChangeText3dFont(String id, World world, Store<EntityStore> store, String font_id) {

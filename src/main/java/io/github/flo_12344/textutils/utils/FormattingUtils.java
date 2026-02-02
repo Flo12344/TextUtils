@@ -81,25 +81,36 @@ public class FormattingUtils {
                 } + "\n";
     }
 
-    public static List<ColoredText> parseFormattedText(String input) {
-        List<ColoredText> formattedTexts = new ArrayList<>();
-        Pattern pattern = Pattern.compile("\\{(\\w+)\\}(.*?)\\{\\\\\\1\\}");
-        Matcher matcher = pattern.matcher(input);
+    public static List<List<ColoredText>> parseFormattedText(String input) {
+        List<List<ColoredText>> formattedTexts = new ArrayList<>();
+        var to_process = input.split("\\\\n");
 
-        int lastEnd = 0;
-        while (matcher.find()) {
-            if (matcher.start() > lastEnd) {
-                formattedTexts.add(new ColoredText(input.substring(lastEnd, matcher.start()), "white"));
+        int pos = 0;
+        for (var line : to_process) {
+            formattedTexts.add(new ArrayList<>());
+            if (line.isEmpty()) {
+                pos++;
+                continue;
             }
-            String color = matcher.group(1);
-            String text = matcher.group(2);
-            formattedTexts.add(new ColoredText(text, color.toLowerCase()));
+            Pattern pattern = Pattern.compile("\\{(\\w+)\\}(.*?)\\{\\\\\\1\\}");
+            Matcher matcher = pattern.matcher(line);
 
-            lastEnd = matcher.end();
-        }
+            int lastEnd = 0;
+            while (matcher.find()) {
+                if (matcher.start() > lastEnd) {
+                    formattedTexts.get(pos).add(new ColoredText(line.substring(lastEnd, matcher.start()), "white"));
+                }
+                String color = matcher.group(1);
+                String text = matcher.group(2);
+                formattedTexts.get(pos).add(new ColoredText(text, color.toLowerCase()));
 
-        if (lastEnd < input.length()) {
-            formattedTexts.add(new ColoredText(input.substring(lastEnd), "white"));
+                lastEnd = matcher.end();
+            }
+
+            if (lastEnd < line.length()) {
+                formattedTexts.get(pos).add(new ColoredText(line.substring(lastEnd), "white"));
+            }
+            pos++;
         }
 
         return formattedTexts;

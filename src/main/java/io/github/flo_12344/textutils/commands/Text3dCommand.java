@@ -6,6 +6,7 @@ import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
@@ -25,9 +26,11 @@ import io.github.flo_12344.textutils.utils.FontManager;
 import io.github.flo_12344.textutils.utils.TextManager;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class Text3dCommand extends AbstractPlayerCommand {
 
@@ -37,6 +40,8 @@ public class Text3dCommand extends AbstractPlayerCommand {
         addSubCommand(new NewCommand());
         addSubCommand(new ListCommand());
         addSubCommand(new EditCommand());
+        addSubCommand(new FontCommand());
+        addSubCommand(new EditLineCommand());
         addSubCommand(new RemoveCommand());
         addSubCommand(new HideCommand());
         addSubCommand(new ShowCommand());
@@ -116,13 +121,36 @@ public class Text3dCommand extends AbstractPlayerCommand {
     public static class EditCommand extends AbstractPlayerCommand {
         RequiredArg<String> label;
         RequiredArg<String> text;
-        OptionalArg<String> font_id;
 
         public EditCommand() {
             super("edit", "Edit a specified hologram");
             label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
             text = withRequiredArg("text", "Text to use as a replacement", ArgTypes.STRING);
-            font_id = withOptionalArg("font", "Id of the desired font", ArgTypes.STRING);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            var label_str = label.get(ctx);
+            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
+                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+                return;
+            }
+            String content = text.get(ctx);
+            if (content.startsWith("\""))
+                content = content.substring(1, content.lastIndexOf("\""));
+
+            TextManager.EditText3dContent(label_str, world, store, content);
+        }
+    }
+
+    public static class FontCommand extends AbstractPlayerCommand {
+        RequiredArg<String> label;
+        RequiredArg<String> font_id;
+
+        public FontCommand() {
+            super("font", "Edit a specified hologram");
+            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
+            font_id = withRequiredArg("font", "Id of the desired font", ArgTypes.STRING);
         }
 
         @Override
@@ -137,14 +165,7 @@ public class Text3dCommand extends AbstractPlayerCommand {
                 ctx.sendMessage(Message.raw(String.format("Font %s doesn't exist.", font)));
                 return;
             }
-            String content = text.get(ctx);
-            if (content.startsWith("\""))
-                content = content.substring(1, content.lastIndexOf("\""));
-
-            TextManager.EditText3dContent(label_str, world, store, content);
-            if (!font.isEmpty()) {
-                TextManager.ChangeText3dFont(label_str, world, store, font);
-            }
+            TextManager.ChangeText3dFont(label_str, world, store, font);
         }
     }
 
@@ -306,4 +327,30 @@ public class Text3dCommand extends AbstractPlayerCommand {
         }
     }
 
+    public static class EditLineCommand extends AbstractPlayerCommand {
+        RequiredArg<String> label;
+        RequiredArg<String> text;
+        RequiredArg<Integer> line;
+
+        public EditLineCommand() {
+            super("editline", "Edit a specified hologram");
+            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
+            text = withRequiredArg("text", "Text to use as a replacement", ArgTypes.STRING);
+            line = withRequiredArg("line", "line to edit", ArgTypes.INTEGER);
+        }
+
+        @Override
+        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+            var label_str = label.get(ctx);
+            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
+                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+                return;
+            }
+            String content = text.get(ctx);
+            if (content.startsWith("\""))
+                content = content.substring(1, content.lastIndexOf("\""));
+
+            TextManager.EditText3dLine(label_str, world, store, content, line.get(ctx));
+        }
+    }
 }

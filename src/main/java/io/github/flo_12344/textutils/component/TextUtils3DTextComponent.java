@@ -8,6 +8,8 @@ import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -38,7 +40,7 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
     private String id;
     private float size = 1.0f;
     private boolean visible = true;
-    private CopyOnWriteArrayList<UUID> text_entities = new CopyOnWriteArrayList<>();
+    private List<UUID> text_entities = new ArrayList<>();
 
     public static ComponentType<EntityStore, TextUtils3DTextComponent> getComponentType() {
         return TYPE;
@@ -108,12 +110,16 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
         return font_name;
     }
 
-    public CopyOnWriteArrayList<UUID> getText_entities() {
+    public List<UUID> getText_entities() {
         return text_entities;
     }
 
-    public void setText_entities(CopyOnWriteArrayList<UUID> text_entities) {
+    public void setText_entities(List<UUID> text_entities) {
         this.text_entities = text_entities;
+    }
+
+    public void addText_entities(UUID text_entities) {
+        this.text_entities.add(text_entities);
     }
 
     @NullableDecl
