@@ -52,6 +52,8 @@ public class Text2dCommand extends AbstractPlayerCommand {
             var group = "";
             int scale = (int) (FontManager.INSTANCE.getFontSettings(font_id.get(ctx)).glyph_size);
             float resize = ctx.provided(size) ? size.get(ctx) : 1;
+            group += "Anchor: (Top: %s);\n".formatted(200);
+
             for (var to_use : lines) {
                 group += "Group {\n";
                 group += "LayoutMode: Left;\n";

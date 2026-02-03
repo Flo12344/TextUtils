@@ -3,6 +3,6 @@ $Common = "Common.ui";
 
 
 Group #Main {
-    
+  LayoutMode: Center;
 }
 

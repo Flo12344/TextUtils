@@ -68,24 +68,20 @@ public class TextManager {
             return;
         transform.getPosition().add(pos);
         transform.getRotation().add(rot);
-        int text_pos = 0;
-        float width;
-        if (Objects.equals(textUtilsEntity.getFont_name(), "")) {
-            width = 0.1f;
-        } else {
-            width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
-        }
-        var arr = textUtilsEntity.getText_entities();
-        var size = arr.size();
-        for (var uuid : arr) {
-            var c = store.getExternalData().getRefFromUUID(uuid);
-            Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
-            Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
-            TransformComponent t = store.getComponent(c, TransformComponent.getComponentType());
-            t.setPosition(offset.add(transform.getPosition()));
-            t.setRotation(transform.getRotation());
-            text_pos++;
-        }
+        textUtilsEntity.setMoved(true);
+//        int text_pos = 0;
+//        float width = (float) FontManager.INSTANCE.getFontSettings(textUtilsEntity.getFont_name()).max_width / 64;
+//        var arr = textUtilsEntity.getText_entities();
+//        var size = arr.size();
+//        for (var uuid : arr) {
+//            var c = store.getExternalData().getRefFromUUID(uuid);
+//            Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
+//            Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
+//            TransformComponent t = store.getComponent(c, TransformComponent.getComponentType());
+//            t.setPosition(offset.add(transform.getPosition()));
+//            t.setRotation(transform.getRotation());
+//            text_pos++;
+//        }
     }
 
     public static void SetText3dVisibility(String id, World world, Store<EntityStore> store, Boolean visible) {

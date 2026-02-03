@@ -50,6 +50,10 @@ public class FontManager {
     }
 
     private void InitFromSave(String font_path, String font_id, float size, EnumSet<FontConfig.LOADABLE_BLOCK> loaded, FontConfig.SOURCE source) throws IOException, FontFormatException {
+        if (font_id.isEmpty()) {
+            font_id = font_path.substring(font_path.lastIndexOf(File.separator));
+            font_id.replaceAll("\\.ttf|\\.otf", "").replaceAll(" ", "_");
+        }
         Init(font_path, font_id, size, source);
         LoadFlags(font_id, loaded);
     }

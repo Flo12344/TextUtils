@@ -42,6 +42,17 @@ public class TextUtils extends JavaPlugin {
 
     @Override
     protected void setup() {
+        var dir_path = getDataDirectory().resolve("fonts");
+        File dir = new File(dir_path.toString());
+        if (!dir.exists()) {
+            boolean directoryCreated = dir.mkdirs();
+            if (!directoryCreated) {
+                Universe.get().getLogger().atSevere().log("FAILED to create fonts dir");
+            }
+        }
+        fontRuntimeManager = new FontRuntimeManager();
+        fontRuntimeManager.registerRuntimePack();
+
         this.FONT_MANAGER.save();
 
         this.getCommandRegistry().registerCommand(new FontCommand());
@@ -57,16 +68,7 @@ public class TextUtils extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.DeleterText3dSystem());
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.TrackerText3DSystem());
         this.getEntityStoreRegistry().registerSystem(new Text3dSystem.Character3dSpawned());
-        var dir_path = getDataDirectory().resolve("fonts");
-        File dir = new File(dir_path.toString());
-        if (!dir.exists()) {
-            boolean directoryCreated = dir.mkdirs();
-            if (!directoryCreated) {
-                Universe.get().getLogger().atSevere().log("FAILED to create fonts dir");
-            }
-        }
-        fontRuntimeManager = new FontRuntimeManager();
-        fontRuntimeManager.registerRuntimePack();
+
     }
 
     @Override

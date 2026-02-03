@@ -34,7 +34,8 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
                     .build();
 
     private static ComponentType<EntityStore, TextUtils3DTextComponent> TYPE;
-    private boolean edited;
+    private boolean edited = false;
+    private boolean moved = false;
     private String font_name;
     private String text;
     private String id;
@@ -126,5 +127,13 @@ public class TextUtils3DTextComponent implements Component<EntityStore> {
     @Override
     public Component<EntityStore> clone() {
         return new TextUtils3DTextComponent(font_name, text, getId(), size);
+    }
+
+    public boolean isMoved() {
+        return moved;
+    }
+
+    public void setMoved(boolean moved) {
+        this.moved = moved;
     }
 }

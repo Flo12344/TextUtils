@@ -32,325 +32,329 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class Text3dCommand extends AbstractPlayerCommand {
+public class Text3dCommand extends AbstractPlayerCommand{
 
 
-    public Text3dCommand() {
-        super("text3d", "");
-        addSubCommand(new NewCommand());
-        addSubCommand(new ListCommand());
-        addSubCommand(new EditCommand());
-        addSubCommand(new FontCommand());
-        addSubCommand(new EditLineCommand());
-        addSubCommand(new RemoveCommand());
-        addSubCommand(new HideCommand());
-        addSubCommand(new ShowCommand());
-        addSubCommand(new MoveCommand());
-        addSubCommand(new RotateCommand());
-        addSubCommand(new ResizeCommand());
-        addSubCommand(new TrackCommand());
+  public Text3dCommand(){
+    super("text3d", "");
+    addSubCommand(new NewCommand());
+    addSubCommand(new ListCommand());
+    addSubCommand(new EditCommand());
+    addSubCommand(new FontCommand());
+    addSubCommand(new EditLineCommand());
+    addSubCommand(new RemoveCommand());
+    addSubCommand(new HideCommand());
+    addSubCommand(new ShowCommand());
+    addSubCommand(new MoveCommand());
+    addSubCommand(new RotateCommand());
+    addSubCommand(new ResizeCommand());
+    addSubCommand(new TrackCommand());
+  }
+
+  @Override
+  protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+    ctx.sendMessage(Message.raw("To start with /text3d if you haven't used /font come back once done"));
+    ctx.sendMessage(Message.raw("You can spawn a new text like that:"));
+    ctx.sendMessage(Message.raw("/text3d new <position x y z> <text> --id=(id used to modify) --font=(font id will default to a loaded font)"));
+    ctx.sendMessage(Message.raw("Once created you can move, resize, rotate, show/hide, edit, editline or change the font"));
+    ctx.sendMessage(Message.raw("Have Fun"));
+  }
+
+  public static class ListCommand extends AbstractPlayerCommand{
+    protected ListCommand(){
+      super("list", "List all holograms");
     }
 
     @Override
-    protected void execute(@NonNullDecl CommandContext commandContext, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
+    protected void execute(@NonNullDecl CommandContext commandContext, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+      TextUtilsHologramRegistry.get().getKeys().forEach(s -> {
+        commandContext.sendMessage(Message.raw(s));
+      });
+    }
+  }
 
+  public static class NewCommand extends AbstractPlayerCommand{
+    RequiredArg<Vector3i> position;
+    RequiredArg<String> text;
+    OptionalArg<String> id;
+    OptionalArg<String> font_id;
+    OptionalArg<Vector3f> rotation;
+    OptionalArg<Float> size;
+
+    protected NewCommand(){
+      super("new", "Create a new hologram");
+      position = withRequiredArg("position", "Position of the hologram", ArgTypes.VECTOR3I);
+      text = withRequiredArg("text", "Text to display color formatting works like that -> '{color_name}colored{\\\\color_name} not colored'", ArgTypes.STRING);
+      id = withOptionalArg("id", "Id to access the hologram for edits if not set will get a random uuid", ArgTypes.STRING);
+      font_id = withOptionalArg("font", "Id of the desired font", ArgTypes.STRING);
+      rotation = withOptionalArg("rotation", "Rotation of the hologram in rad", ArgTypes.ROTATION);
+      size = withOptionalArg("size", "Size of the hologram", ArgTypes.FLOAT);
     }
 
-    public static class ListCommand extends AbstractPlayerCommand {
-        protected ListCommand() {
-            super("list", "List all holograms");
+    @Override
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+      String content = text.get(ctx);
+      if(content.startsWith("\""))
+        content = content.substring(1, content.lastIndexOf("\""));
+      final Vector3d pos = position.get(ctx).toVector3d();
+      final Vector3f rot = ctx.provided(rotation) ? rotation.get(ctx) : new Vector3f();
+      final String _id = ctx.provided(id) ? id.get(ctx) : UUID.randomUUID().toString();
+      String font = ctx.provided(font_id) ? font_id.get(ctx) : "";
+      final float tsize = ctx.provided(size) ? size.get(ctx) : 1.0f;
+      if(font.isEmpty()){
+        if(FontManager.INSTANCE.getLoaded_font().isEmpty()){
+          ctx.sendMessage(Message.raw("No Font loaded"));
+          return;
+        }else{
+          font = FontManager.INSTANCE.getLoaded_font().keySet().stream().toList().getFirst();
         }
+      }
+      if(!FontManager.INSTANCE.IsFontLoaded(font)){
+        ctx.sendMessage(Message.raw(String.format("Font %s doesn't exist.", font)));
+        return;
+      }
+      if(TextUtilsHologramRegistry.get().contains(_id)){
+        ctx.sendMessage(Message.raw(String.format("TextUtilsEntity with label %s already exist.", _id)));
+        return;
+      }
 
-        @Override
-        protected void execute(@NonNullDecl CommandContext commandContext, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            TextUtilsHologramRegistry.get().getKeys().forEach(s -> {
-                commandContext.sendMessage(Message.raw(s));
-            });
-        }
+      TextManager.SpawnText3dEntity(pos, rot, world, content, _id, font, tsize);
+    }
+  }
+
+  public static class EditCommand extends AbstractPlayerCommand{
+    RequiredArg<String> label;
+    RequiredArg<String> text;
+
+    public EditCommand(){
+      super("edit", "Edit a specified hologram");
+      label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
+      text = withRequiredArg("text", "Text to use as a replacement", ArgTypes.STRING);
     }
 
-    public static class NewCommand extends AbstractPlayerCommand {
-        RequiredArg<Vector3i> position;
-        RequiredArg<String> text;
-        OptionalArg<String> id;
-        OptionalArg<String> font_id;
-        OptionalArg<Vector3f> rotation;
-        OptionalArg<Float> size;
+    @Override
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+      var label_str = label.get(ctx);
+      if(!TextUtilsHologramRegistry.get().contains(label_str)){
+        ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+        return;
+      }
+      String content = text.get(ctx);
+      if(content.startsWith("\""))
+        content = content.substring(1, content.lastIndexOf("\""));
 
-        protected NewCommand() {
-            super("new", "Create a new hologram");
-            position = withRequiredArg("position", "Position of the hologram", ArgTypes.VECTOR3I);
-            text = withRequiredArg("text", "Text to display color formatting works like that -> '{color_name}colored{\\\\color_name} not colored'", ArgTypes.STRING);
-            id = withOptionalArg("id", "Id to access the hologram for edits if not set will get a random uuid", ArgTypes.STRING);
-            font_id = withOptionalArg("font", "Id of the desired font", ArgTypes.STRING);
-            rotation = withOptionalArg("rotation", "Rotation of the hologram in rad", ArgTypes.ROTATION);
-            size = withOptionalArg("size", "Size of the hologram", ArgTypes.FLOAT);
-        }
+      TextManager.EditText3dContent(label_str, world, store, content);
+    }
+  }
 
-        @Override
-        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            String content = text.get(ctx);
-            if (content.startsWith("\""))
-                content = content.substring(1, content.lastIndexOf("\""));
-            final Vector3d pos = position.get(ctx).toVector3d();
-            final Vector3f rot = ctx.provided(rotation) ? rotation.get(ctx) : new Vector3f();
-            final String _id = ctx.provided(id) ? id.get(ctx) : UUID.randomUUID().toString();
-            String font = ctx.provided(font_id) ? font_id.get(ctx) : "";
-            final float tsize = ctx.provided(size) ? size.get(ctx) : 1.0f;
-            if (font.isEmpty()) {
-                if (FontManager.INSTANCE.getLoaded_font().isEmpty()) {
-                    ctx.sendMessage(Message.raw("No Font loaded"));
-                    return;
-                } else {
-                    font = FontManager.INSTANCE.getLoaded_font().keySet().stream().toList().getFirst();
-                }
-            }
-            if (!FontManager.INSTANCE.IsFontLoaded(font)) {
-                ctx.sendMessage(Message.raw(String.format("Font %s doesn't exist.", font)));
-                return;
-            }
-            if (TextUtilsHologramRegistry.get().contains(_id)) {
-                ctx.sendMessage(Message.raw(String.format("TextUtilsEntity with label %s already exist.", _id)));
-                return;
-            }
+  public static class FontCommand extends AbstractPlayerCommand{
+    RequiredArg<String> label;
+    RequiredArg<String> font_id;
 
-            TextManager.SpawnText3dEntity(pos, rot, world, content, _id, font, tsize);
-        }
+    public FontCommand(){
+      super("font", "Edit a specified hologram");
+      label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
+      font_id = withRequiredArg("font", "Id of the desired font", ArgTypes.STRING);
     }
 
-    public static class EditCommand extends AbstractPlayerCommand {
-        RequiredArg<String> label;
-        RequiredArg<String> text;
+    @Override
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+      var label_str = label.get(ctx);
+      if(!TextUtilsHologramRegistry.get().contains(label_str)){
+        ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+        return;
+      }
+      final String font = ctx.getInput(font_id) == null ? "" : font_id.get(ctx);
+      if(!font.isEmpty() && !FontManager.INSTANCE.IsFontLoaded(font)){
+        ctx.sendMessage(Message.raw(String.format("Font %s doesn't exist.", font)));
+        return;
+      }
+      TextManager.ChangeText3dFont(label_str, world, store, font);
+    }
+  }
 
-        public EditCommand() {
-            super("edit", "Edit a specified hologram");
-            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
-            text = withRequiredArg("text", "Text to use as a replacement", ArgTypes.STRING);
-        }
+  public static class MoveCommand extends AbstractPlayerCommand{
+    RequiredArg<String> label;
+    RequiredArg<Float> x, y, z;
 
-        @Override
-        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            var label_str = label.get(ctx);
-            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
-                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
-                return;
-            }
-            String content = text.get(ctx);
-            if (content.startsWith("\""))
-                content = content.substring(1, content.lastIndexOf("\""));
-
-            TextManager.EditText3dContent(label_str, world, store, content);
-        }
+    public MoveCommand(){
+      super("move", "Move a desired hologram by precise value");
+      label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
+      x = withRequiredArg("x", "", ArgTypes.FLOAT);
+      y = withRequiredArg("y", "", ArgTypes.FLOAT);
+      z = withRequiredArg("z", "", ArgTypes.FLOAT);
     }
 
-    public static class FontCommand extends AbstractPlayerCommand {
-        RequiredArg<String> label;
-        RequiredArg<String> font_id;
-
-        public FontCommand() {
-            super("font", "Edit a specified hologram");
-            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
-            font_id = withRequiredArg("font", "Id of the desired font", ArgTypes.STRING);
-        }
-
-        @Override
-        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            var label_str = label.get(ctx);
-            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
-                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
-                return;
-            }
-            final String font = ctx.getInput(font_id) == null ? "" : font_id.get(ctx);
-            if (!font.isEmpty() && !FontManager.INSTANCE.IsFontLoaded(font)) {
-                ctx.sendMessage(Message.raw(String.format("Font %s doesn't exist.", font)));
-                return;
-            }
-            TextManager.ChangeText3dFont(label_str, world, store, font);
-        }
+    @Override
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+      var label_str = label.get(ctx);
+      if(!TextUtilsHologramRegistry.get().contains(label_str)){
+        ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+        return;
+      }
+      TextManager.MoveText3dEntity(label_str, world, store, new Vector3d(x.get(ctx), y.get(ctx), z.get(ctx)));
     }
 
-    public static class MoveCommand extends AbstractPlayerCommand {
-        RequiredArg<String> label;
-        RequiredArg<Float> x, y, z;
+  }
 
-        public MoveCommand() {
-            super("move", "Move a desired hologram by precise value");
-            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
-            x = withRequiredArg("x", "", ArgTypes.FLOAT);
-            y = withRequiredArg("y", "", ArgTypes.FLOAT);
-            z = withRequiredArg("z", "", ArgTypes.FLOAT);
-        }
+  public static class RotateCommand extends AbstractPlayerCommand{
+    RequiredArg<String> label;
+    RequiredArg<Vector3f> rotation;
 
-        @Override
-        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            var label_str = label.get(ctx);
-            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
-                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
-                return;
-            }
-            TextManager.MoveText3dEntity(label_str, world, store, new Vector3d(x.get(ctx), y.get(ctx), z.get(ctx)));
-        }
-
+    public RotateCommand(){
+      super("rotate", "Rotate the specified hologram");
+      label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
+      rotation = withRequiredArg("rotation", "", ArgTypes.ROTATION);
     }
 
-    public static class RotateCommand extends AbstractPlayerCommand {
-        RequiredArg<String> label;
-        RequiredArg<Vector3f> rotation;
+    @Override
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+      var label_str = label.get(ctx);
+      if(!TextUtilsHologramRegistry.get().contains(label_str)){
+        ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+        return;
+      }
 
-        public RotateCommand() {
-            super("rotate", "Rotate the specified hologram");
-            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
-            rotation = withRequiredArg("rotation", "", ArgTypes.ROTATION);
-        }
+      TextManager.RotateText3dEntity(label_str, world, store, rotation.get(ctx));
+    }
+  }
 
-        @Override
-        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            var label_str = label.get(ctx);
-            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
-                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
-                return;
-            }
+  public static class ResizeCommand extends AbstractPlayerCommand{
+    RequiredArg<String> label;
+    RequiredArg<Float> size;
 
-            TextManager.RotateText3dEntity(label_str, world, store, rotation.get(ctx));
-        }
+    public ResizeCommand(){
+      super("resize", "Change the size of the specified hologram");
+      label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
+      size = withRequiredArg("size", "", ArgTypes.FLOAT);
     }
 
-    public static class ResizeCommand extends AbstractPlayerCommand {
-        RequiredArg<String> label;
-        RequiredArg<Float> size;
+    @Override
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+      var label_str = label.get(ctx);
+      if(!TextUtilsHologramRegistry.get().contains(label_str)){
+        ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+        return;
+      }
 
-        public ResizeCommand() {
-            super("resize", "Change the size of the specified hologram");
-            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
-            size = withRequiredArg("size", "", ArgTypes.FLOAT);
-        }
+      TextManager.ResizeText3dEntity(label_str, world, store, size.get(ctx));
 
-        @Override
-        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            var label_str = label.get(ctx);
-            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
-                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
-                return;
-            }
+    }
+  }
 
-            TextManager.ResizeText3dEntity(label_str, world, store, size.get(ctx));
+  public static class RemoveCommand extends AbstractPlayerCommand{
+    RequiredArg<String> label;
 
-        }
+    public RemoveCommand(){
+      super("remove", "Remove the specified hologram");
+      label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
     }
 
-    public static class RemoveCommand extends AbstractPlayerCommand {
-        RequiredArg<String> label;
+    @Override
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+      var label_str = label.get(ctx);
+      if(!TextUtilsHologramRegistry.get().contains(label_str)){
+        ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+        return;
+      }
+      TextManager.RemoveText3dEntity(label_str, world, store);
+    }
+  }
 
-        public RemoveCommand() {
-            super("remove", "Remove the specified hologram");
-            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
-        }
+  public static class HideCommand extends AbstractPlayerCommand{
+    RequiredArg<String> label;
 
-        @Override
-        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            var label_str = label.get(ctx);
-            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
-                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
-                return;
-            }
-            TextManager.RemoveText3dEntity(label_str, world, store);
-        }
+    public HideCommand(){
+      super("hide", "Hide the specified hologram");
+      label = withRequiredArg("id", "Id of the desired hologram", ArgTypes.STRING);
     }
 
-    public static class HideCommand extends AbstractPlayerCommand {
-        RequiredArg<String> label;
+    @Override
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+      var label_str = label.get(ctx);
+      if(!TextUtilsHologramRegistry.get().contains(label_str)){
+        ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+        return;
+      }
 
-        public HideCommand() {
-            super("hide", "Hide the specified hologram");
-            label = withRequiredArg("id", "Id of the desired hologram", ArgTypes.STRING);
-        }
+      TextManager.SetText3dVisibility(label_str, world, store, false);
+      ctx.sendMessage(Message.raw(String.format("TextUtilsEntity %s hidden", label_str)));
+    }
+  }
 
-        @Override
-        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            var label_str = label.get(ctx);
-            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
-                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
-                return;
-            }
+  public static class ShowCommand extends AbstractPlayerCommand{
+    RequiredArg<String> label;
 
-            TextManager.SetText3dVisibility(label_str, world, store, false);
-            ctx.sendMessage(Message.raw(String.format("TextUtilsEntity %s hidden", label_str)));
-        }
+    public ShowCommand(){
+      super("show", "Unhide the specified hologram");
+      label = withRequiredArg("label", "", ArgTypes.STRING);
     }
 
-    public static class ShowCommand extends AbstractPlayerCommand {
-        RequiredArg<String> label;
+    @Override
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+      var label_str = label.get(ctx);
+      if(!TextUtilsHologramRegistry.get().contains(label_str)){
+        ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+        return;
+      }
 
-        public ShowCommand() {
-            super("show", "Unhide the specified hologram");
-            label = withRequiredArg("label", "", ArgTypes.STRING);
-        }
+      TextManager.SetText3dVisibility(label_str, world, store, true);
+      ctx.sendMessage(Message.raw(String.format("TextUtilsEntity %s now visible", label_str)));
+    }
+  }
 
-        @Override
-        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            var label_str = label.get(ctx);
-            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
-                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
-                return;
-            }
+  public static class TrackCommand extends AbstractTargetEntityCommand{
+    RequiredArg<String> label;
+    OptionalArg<Vector3i> offset;
 
-            TextManager.SetText3dVisibility(label_str, world, store, true);
-            ctx.sendMessage(Message.raw(String.format("TextUtilsEntity %s now visible", label_str)));
-        }
+    public TrackCommand(){
+      super("track", "Link the specified hologram to an entity");
+      label = withRequiredArg("id", "Id of the desired hologram", ArgTypes.STRING);
+      offset = withOptionalArg("offset", "Offset to the entity", ArgTypes.VECTOR3I);
     }
 
-    public static class TrackCommand extends AbstractTargetEntityCommand {
-        RequiredArg<String> label;
-        OptionalArg<Vector3i> offset;
+    @Override
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl ObjectList<Ref<EntityStore>> objectList, @NonNullDecl World world, @NonNullDecl Store<EntityStore> store){
+      var label_str = label.get(ctx);
 
-        public TrackCommand() {
-            super("track", "Link the specified hologram to an entity");
-            label = withRequiredArg("id", "Id of the desired hologram", ArgTypes.STRING);
-            offset = withOptionalArg("offset", "Offset to the entity", ArgTypes.VECTOR3I);
-        }
+      if(!TextUtilsHologramRegistry.get().contains(label_str)){
+        ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label_str)));
+        return;
+      }
 
-        @Override
-        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl ObjectList<Ref<EntityStore>> objectList, @NonNullDecl World world, @NonNullDecl Store<EntityStore> store) {
-            var label_str = label.get(ctx);
+      if(objectList.isEmpty())
+        return;
+      var uuid = store.getComponent(objectList.getFirst(), UUIDComponent.getComponentType());
 
-            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
-                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label_str)));
-                return;
-            }
+      var text_entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(label_str));
+      store.addComponent(text_entity, Text3dTrackerComponent.getComponentType(), new Text3dTrackerComponent(uuid.getUuid(), offset.get(ctx)));
+    }
+  }
 
-            if (objectList.isEmpty())
-                return;
-            var uuid = store.getComponent(objectList.getFirst(), UUIDComponent.getComponentType());
+  public static class EditLineCommand extends AbstractPlayerCommand{
+    RequiredArg<String> label;
+    RequiredArg<String> text;
+    RequiredArg<Integer> line;
 
-            var text_entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(label_str));
-            store.addComponent(text_entity, Text3dTrackerComponent.getComponentType(), new Text3dTrackerComponent(uuid.getUuid(), offset.get(ctx)));
-        }
+    public EditLineCommand(){
+      super("editline", "Edit a specified hologram");
+      label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
+      text = withRequiredArg("text", "Text to use as a replacement", ArgTypes.STRING);
+      line = withRequiredArg("line", "line to edit", ArgTypes.INTEGER);
     }
 
-    public static class EditLineCommand extends AbstractPlayerCommand {
-        RequiredArg<String> label;
-        RequiredArg<String> text;
-        RequiredArg<Integer> line;
+    @Override
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
+      var label_str = label.get(ctx);
+      if(!TextUtilsHologramRegistry.get().contains(label_str)){
+        ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
+        return;
+      }
+      String content = text.get(ctx);
+      if(content.startsWith("\""))
+        content = content.substring(1, content.lastIndexOf("\""));
 
-        public EditLineCommand() {
-            super("editline", "Edit a specified hologram");
-            label = withRequiredArg("label", "Id of the desired hologram", ArgTypes.STRING);
-            text = withRequiredArg("text", "Text to use as a replacement", ArgTypes.STRING);
-            line = withRequiredArg("line", "line to edit", ArgTypes.INTEGER);
-        }
-
-        @Override
-        protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
-            var label_str = label.get(ctx);
-            if (!TextUtilsHologramRegistry.get().contains(label_str)) {
-                ctx.sendMessage(Message.raw(String.format("Unknown TextUtilsEntity label: %s", label)));
-                return;
-            }
-            String content = text.get(ctx);
-            if (content.startsWith("\""))
-                content = content.substring(1, content.lastIndexOf("\""));
-
-            TextManager.EditText3dLine(label_str, world, store, content, line.get(ctx));
-        }
+      TextManager.EditText3dLine(label_str, world, store, content, line.get(ctx));
     }
+  }
 }
