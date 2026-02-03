@@ -110,6 +110,7 @@ public class FontCommand extends AbstractPlayerCommand{
     protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
       if(!FontManager.INSTANCE.IsFontLoaded(font_id.get(ctx))){
         ctx.sendMessage(Message.raw("Font not found"));
+        return;
       }
       try{
         FontManager.INSTANCE.LoadFlags(font_id.get(ctx), range_name.get(ctx));
@@ -139,6 +140,7 @@ public class FontCommand extends AbstractPlayerCommand{
     protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
       if(!FontManager.INSTANCE.IsFontLoaded(font_id.get(ctx))){
         ctx.sendMessage(Message.raw("Font not found"));
+        return;
       }
       try{
         FontManager.INSTANCE.LoadRange(font_id.get(ctx), start.get(ctx), end.get(ctx), range_name.get(ctx));
