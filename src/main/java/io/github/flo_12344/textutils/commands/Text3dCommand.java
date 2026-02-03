@@ -37,7 +37,6 @@ public class Text3dCommand extends AbstractPlayerCommand{
 
   public Text3dCommand(){
     super("text3d", "");
-    addSubCommand(new HelpCommand());
     addSubCommand(new NewCommand());
     addSubCommand(new ListCommand());
     addSubCommand(new EditCommand());
@@ -54,22 +53,11 @@ public class Text3dCommand extends AbstractPlayerCommand{
 
   @Override
   protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
-
-  }
-
-  public static class HelpCommand extends AbstractPlayerCommand{
-    protected HelpCommand(){
-      super("help", "");
-    }
-
-    @Override
-    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
-      ctx.sendMessage(Message.raw("To start with /text3d if you haven't used /font come back once done"));
-      ctx.sendMessage(Message.raw("You can spawn a new text like that:"));
-      ctx.sendMessage(Message.raw("/text3d new <position x y z> <text> --id=(id used to modify) --font=(font id will default to a loaded font)"));
-      ctx.sendMessage(Message.raw("Once created you can move, resize, rotate, show/hide, edit, editline or change the font"));
-      ctx.sendMessage(Message.raw("Have Fun"));
-    }
+    ctx.sendMessage(Message.raw("To start with /text3d if you haven't used /font come back once done"));
+    ctx.sendMessage(Message.raw("You can spawn a new text like that:"));
+    ctx.sendMessage(Message.raw("/text3d new <position x y z> <text> --id=(id used to modify) --font=(font id will default to a loaded font)"));
+    ctx.sendMessage(Message.raw("Once created you can move, resize, rotate, show/hide, edit, editline or change the font"));
+    ctx.sendMessage(Message.raw("Have Fun"));
   }
 
   public static class ListCommand extends AbstractPlayerCommand{

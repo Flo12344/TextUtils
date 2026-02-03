@@ -36,7 +36,6 @@ import java.util.logging.Level;
 public class FontCommand extends AbstractPlayerCommand{
   public FontCommand(){
     super("font", "", false);
-    addSubCommand(new HelpCommand());
     addSubCommand(new ListCommand());
     addSubCommand(new InitCommand());
     addSubCommand(new RangeCommand());
@@ -66,22 +65,6 @@ public class FontCommand extends AbstractPlayerCommand{
       });
     }
   }
-
-  public static class HelpCommand extends AbstractPlayerCommand{
-    protected HelpCommand(){
-      super("help", "");
-    }
-
-    @Override
-    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world){
-      ctx.sendMessage(Message.raw("To start with TextUtils you need to initialize a font through"));
-      ctx.sendMessage(Message.raw("/font init <font file name>"));
-      ctx.sendMessage(Message.raw("Once done you need to load unicode ranges (none are loaded by default)"));
-      ctx.sendMessage(Message.raw("/font range <font id> <list of ranges>"));
-      ctx.sendMessage(Message.raw("and now you can go to /text3d"));
-    }
-  }
-
 
   public static class InitCommand extends AbstractPlayerCommand{
     RequiredArg<String> font_name;
