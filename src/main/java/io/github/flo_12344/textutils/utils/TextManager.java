@@ -101,8 +101,6 @@ public class TextManager{
     var txt = world.getEntityStore().getStore().getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
     String current = txt.getText();
     List<String> lines = new ArrayList<>(Arrays.asList(current.split("\\\\n")));
-    Universe.get().sendMessage(Message.raw(current));
-    Universe.get().sendMessage(Message.raw(String.valueOf(lines.size())));
     while(lines.size() <= line){
       lines.add("");
     }
