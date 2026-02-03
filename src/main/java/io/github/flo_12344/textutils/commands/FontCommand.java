@@ -91,6 +91,7 @@ public class FontCommand extends AbstractPlayerCommand{
         }
       }catch(IOException | FontFormatException e){
         ctx.sendMessage(Message.raw(e.getMessage()));
+        return;
       }
       ctx.sendMessage(Message.raw("Font %s loaded as %s".formatted(font, id)));
     }
