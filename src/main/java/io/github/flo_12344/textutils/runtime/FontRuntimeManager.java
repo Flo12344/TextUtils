@@ -19,109 +19,109 @@ import java.util.List;
 import java.util.logging.Level;
 
 // Based on https://github.com/Jacobwasbeast/ImageFrames-Hytale
-public class FontRuntimeManager {
-    public static final String RUNTIME_ASSETS_PACK = "TextUtilsRuntimeAssets";
-    public static final String RUNTIME_ASSETS_DIR = "Textutils_Assets";
-    public static final String RUNTIME_MODEL_DIR = "Server/Models/Textutils/";
-    public static final String MODEL_TEXTURE_PATH = "Items/Textutils/";
-    public static final String UI_TEXTURE_PATH = "UI/Custom/Textutils/";
-    private static final AssetUpdateQuery TILE_UPDATE_QUERY = new AssetUpdateQuery(
-            new AssetUpdateQuery.RebuildCache(false, true, true, false, false, false));
+public class FontRuntimeManager{
+  public static final String RUNTIME_ASSETS_PACK = "TextUtilsRuntimeAssets";
+  public static final String RUNTIME_ASSETS_DIR = "Textutils_Assets";
+  public static final String RUNTIME_MODEL_DIR = "Server/Models/Textutils/";
+  public static final String MODEL_TEXTURE_PATH = "Items/Textutils/";
+  public static final String UI_TEXTURE_PATH = "UI/Custom/Textutils/";
+  private static final AssetUpdateQuery TILE_UPDATE_QUERY = new AssetUpdateQuery(
+          new AssetUpdateQuery.RebuildCache(false, true, true, false, false, false));
 
-    private final Path runtimeAssetsPath;
-    private final Path runtimeCommonModelPath;
+  private final Path runtimeAssetsPath;
+  private final Path runtimeCommonModelPath;
 
-    public FontRuntimeManager() {
-        this.runtimeAssetsPath = resolveRuntimeBasePath().resolve(RUNTIME_ASSETS_DIR);
-        var check = runtimeAssetsPath.toFile();
-        if (!check.exists()) {
-            check.mkdirs();
-        }
-        this.runtimeCommonModelPath = runtimeAssetsPath.resolve("Common").resolve(MODEL_TEXTURE_PATH);
+  public FontRuntimeManager(){
+    this.runtimeAssetsPath = resolveRuntimeBasePath().resolve(RUNTIME_ASSETS_DIR);
+    var check = runtimeAssetsPath.toFile();
+    if(!check.exists()){
+      check.mkdirs();
     }
+    this.runtimeCommonModelPath = runtimeAssetsPath.resolve("Common").resolve(MODEL_TEXTURE_PATH);
+  }
 
-    public void registerRuntimePack() {
-        File dir_path = FontRuntimeManager.resolveRuntimeBasePath()
-                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
-                .resolve(FontRuntimeManager.RUNTIME_MODEL_DIR).toFile();
-        dir_path.mkdirs();
+  public void registerRuntimePack(){
+    File dir_path = FontRuntimeManager.resolveRuntimeBasePath()
+            .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
+            .resolve(FontRuntimeManager.RUNTIME_MODEL_DIR).toFile();
+    dir_path.mkdirs();
 
-        dir_path = FontRuntimeManager.resolveRuntimeBasePath()
-                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common")
-                .resolve(FontRuntimeManager.UI_TEXTURE_PATH).toFile();
-        dir_path.mkdirs();
-        dir_path = FontRuntimeManager.resolveRuntimeBasePath()
-                .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
-                .resolve("Common")
-                .resolve(FontRuntimeManager.MODEL_TEXTURE_PATH).toFile();
-        dir_path.mkdirs();
+    dir_path = FontRuntimeManager.resolveRuntimeBasePath()
+            .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR).resolve("Common")
+            .resolve(FontRuntimeManager.UI_TEXTURE_PATH).toFile();
+    dir_path.mkdirs();
+    dir_path = FontRuntimeManager.resolveRuntimeBasePath()
+            .resolve(FontRuntimeManager.RUNTIME_ASSETS_DIR)
+            .resolve("Common")
+            .resolve(FontRuntimeManager.MODEL_TEXTURE_PATH).toFile();
+    dir_path.mkdirs();
 
-        PluginManifest manifest = PluginManifest.CoreBuilder.corePlugin(TextUtils.class)
-                .description("Runtime assets for Textutils").build();
-        manifest.setName(RUNTIME_ASSETS_PACK);
-        manifest.setVersion(Semver.fromString("1.0.0"));
-        AssetModule.get().registerPack(RUNTIME_ASSETS_PACK, runtimeAssetsPath, manifest);
-        broadcastTexturesModels();
+    PluginManifest manifest = PluginManifest.CoreBuilder.corePlugin(TextUtils.class)
+            .description("Runtime assets for Textutils").build();
+    manifest.setName(RUNTIME_ASSETS_PACK);
+    manifest.setVersion(Semver.fromString("1.0.0"));
+    AssetModule.get().registerPack(RUNTIME_ASSETS_PACK, runtimeAssetsPath, manifest, true);
+    broadcastTexturesModels();
+  }
+
+  public void ensureCommonAssetsRegistered(){
+    CommonAssetModule commonAssetModule = CommonAssetModule.get();
+    if(commonAssetModule == null || !Files.isDirectory(runtimeCommonModelPath)){
+      return;
     }
-
-    public void ensureCommonAssetsRegistered() {
-        CommonAssetModule commonAssetModule = CommonAssetModule.get();
-        if (commonAssetModule == null || !Files.isDirectory(runtimeCommonModelPath)) {
-            return;
+    try(var stream = Files.list(runtimeCommonModelPath)){
+      stream.filter(p -> p.getFileName().toString().toLowerCase().endsWith(".png") || p.getFileName().toString().endsWith(".blockymodel")).forEach(path -> {
+        try(var sub = Files.list(path)){
+          sub.forEach(path1 -> {
+            String fileName = path1.getFileName().toString();
+            String assetPath = "Models/Textutils/" + path.getFileName() + File.separator + fileName;
+            if(CommonAssetRegistry.hasCommonAsset(assetPath)){
+              return;
+            }
+            try{
+              byte[] bytes = Files.readAllBytes(path1);
+              commonAssetModule.addCommonAsset(RUNTIME_ASSETS_PACK, new FileCommonAsset(path1, assetPath, bytes));
+            }catch(IOException e){
+              TextUtils.INSTANCE.getLogger().at(Level.WARNING).withCause(e).log("Failed to register asset %s",
+                      assetPath);
+            }
+          });
+        }catch(IOException e){
+          TextUtils.INSTANCE.getLogger().at(Level.WARNING).withCause(e).log("Failed to scan assets");
         }
-        try (var stream = Files.list(runtimeCommonModelPath)) {
-            stream.filter(p -> p.getFileName().toString().toLowerCase().endsWith(".png") || p.getFileName().toString().endsWith(".blockymodel")).forEach(path -> {
-                try (var sub = Files.list(path)) {
-                    sub.forEach(path1 -> {
-                        String fileName = path1.getFileName().toString();
-                        String assetPath = "Models/Textutils/" + path.getFileName() + File.separator + fileName;
-                        if (CommonAssetRegistry.hasCommonAsset(assetPath)) {
-                            return;
-                        }
-                        try {
-                            byte[] bytes = Files.readAllBytes(path1);
-                            commonAssetModule.addCommonAsset(RUNTIME_ASSETS_PACK, new FileCommonAsset(path1, assetPath, bytes));
-                        } catch (IOException e) {
-                            TextUtils.INSTANCE.getLogger().at(Level.WARNING).withCause(e).log("Failed to register asset %s",
-                                    assetPath);
-                        }
-                    });
-                } catch (IOException e) {
-                    TextUtils.INSTANCE.getLogger().at(Level.WARNING).withCause(e).log("Failed to scan assets");
-                }
 
-            });
-        } catch (IOException e) {
-            TextUtils.INSTANCE.getLogger().at(Level.WARNING).withCause(e).log("Failed to scan assets");
-        }
+      });
+    }catch(IOException e){
+      TextUtils.INSTANCE.getLogger().at(Level.WARNING).withCause(e).log("Failed to scan assets");
     }
+  }
 
-    public void broadcastTexturesModels() {
-        ensureCommonAssetsRegistered();
-        CommonAssetModule commonAssetModule = CommonAssetModule.get();
-        if (commonAssetModule == null) {
-            return;
-        }
-        var assets = CommonAssetRegistry
-                .getCommonAssetsStartingWith(RUNTIME_ASSETS_PACK, "Items/Textutils/");
-        if (assets == null || assets.isEmpty()) {
-            return;
-        }
-        commonAssetModule.sendAssets(assets, false);
-        TextUtils.INSTANCE.getLogger().at(java.util.logging.Level.INFO).log("Broadcasted %d Font textures", assets.size());
+  public void broadcastTexturesModels(){
+    ensureCommonAssetsRegistered();
+    CommonAssetModule commonAssetModule = CommonAssetModule.get();
+    if(commonAssetModule == null){
+      return;
     }
+    var assets = CommonAssetRegistry
+            .getCommonAssetsStartingWith(RUNTIME_ASSETS_PACK, "Items/Textutils/");
+    if(assets == null || assets.isEmpty()){
+      return;
+    }
+    commonAssetModule.sendAssets(assets, false);
+    TextUtils.INSTANCE.getLogger().at(java.util.logging.Level.INFO).log("Broadcasted %d Font textures", assets.size());
+  }
 
-    public static Path resolveRuntimeBasePath() {
-        Path cwd = Paths.get("").toAbsolutePath();
-        Path cwdName = cwd.getFileName();
-        if (cwdName != null && "run".equalsIgnoreCase(cwdName.toString())) {
-            return cwd;
-        }
-        Path runDir = cwd.resolve("run");
-        if (Files.isDirectory(runDir)) {
-            return runDir.toAbsolutePath();
-        }
-        return cwd;
+  public static Path resolveRuntimeBasePath(){
+    Path cwd = Paths.get("").toAbsolutePath();
+    Path cwdName = cwd.getFileName();
+    if(cwdName != null && "run".equalsIgnoreCase(cwdName.toString())){
+      return cwd;
     }
+    Path runDir = cwd.resolve("run");
+    if(Files.isDirectory(runDir)){
+      return runDir.toAbsolutePath();
+    }
+    return cwd;
+  }
 
 }
