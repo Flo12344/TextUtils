@@ -8,10 +8,15 @@ import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.math.util.TrigMathUtil;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.protocol.ColorLight;
+import com.hypixel.hytale.protocol.ModelTrail;
+import com.hypixel.hytale.protocol.Phobia;
 import com.hypixel.hytale.server.core.asset.type.model.config.*;
+import com.hypixel.hytale.server.core.asset.type.model.config.camera.CameraSettings;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.*;
 import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
+import com.hypixel.hytale.server.core.modules.physics.component.PhysicsValues;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import io.github.flo_12344.textutils.component.CharacterComponent;
@@ -25,6 +30,7 @@ import io.github.flo_12344.textutils.utils.TextManager;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -163,7 +169,29 @@ public class Text3dSystem{
                 Universe.get().getLogger().at(Level.WARNING).log("Missing character for %s in font %s", c, textUtilsEntity.getFont_name());
                 continue;
               }
-              Model model = new Model(modelAsset.getId(), textUtilsEntity.getSize(), modelAsset.generateRandomAttachmentIds(), modelAsset.getDefaultAttachments(), modelAsset.getBoundingBox(), modelAsset.getModel(), modelAsset.getTexture(), FormattingUtils.getGradientSet(str.getColor()), FormattingUtils.getGradientId(str.getColor()), modelAsset.getEyeHeight(), modelAsset.getCrouchOffset(), modelAsset.getAnimationSetMap(), modelAsset.getCamera(), modelAsset.getLight(), modelAsset.getParticles(), modelAsset.getTrails(), modelAsset.getPhysicsValues(), modelAsset.getDetailBoxes(), modelAsset.getPhobia(), modelAsset.getPhobiaModelAssetId());
+              Model model = new Model(
+                      modelAsset.getId(),
+                      textUtilsEntity.getSize(),
+                      modelAsset.generateRandomAttachmentIds(),
+                      modelAsset.getDefaultAttachments(),
+                      modelAsset.getBoundingBox(),
+                      modelAsset.getModel(),
+                      modelAsset.getTexture(),
+                      FormattingUtils.getGradientSet(str.getColor()),
+                      FormattingUtils.getGradientId(str.getColor()),
+                      modelAsset.getEyeHeight(),
+                      modelAsset.getCrouchOffset(),
+                      modelAsset.getSittingOffset(),
+                      modelAsset.getSleepingOffset(),
+                      modelAsset.getAnimationSetMap(),
+                      modelAsset.getCamera(),
+                      modelAsset.getLight(),
+                      modelAsset.getParticles(),
+                      modelAsset.getTrails(),
+                      modelAsset.getPhysicsValues(),
+                      modelAsset.getDetailBoxes(),
+                      modelAsset.getPhobia(),
+                      modelAsset.getPhobiaModelAssetId());
               holder.ensureComponent(UUIDComponent.getComponentType());
               holder.addComponent(TransformComponent.getComponentType(), getCharacterTransfrom(transform.clone(), line, text_pos, text_len, charWidth, charHeight));
               holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
