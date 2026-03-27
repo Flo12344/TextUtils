@@ -28,6 +28,7 @@ import it.unimi.dsi.fastutil.objects.ObjectList;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -314,7 +315,7 @@ public class Text3dCommand extends AbstractPlayerCommand{
     }
 
     @Override
-    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl ObjectList<Ref<EntityStore>> objectList, @NonNullDecl World world, @NonNullDecl Store<EntityStore> store){
+    protected void execute(@NonNullDecl CommandContext ctx, @NonNullDecl List<Ref<EntityStore>> objectList, @NonNullDecl World world, @NonNullDecl Store<EntityStore> store){
       var label_str = label.get(ctx);
 
       if(!TextUtilsHologramRegistry.get().contains(label_str)){

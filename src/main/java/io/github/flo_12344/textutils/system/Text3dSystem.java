@@ -103,8 +103,8 @@ public class Text3dSystem{
       var chara = holder.getComponent(CharacterComponent.getComponentType());
       var parent = store.getExternalData().getWorld().getEntityRef(chara.parent);
       if(parent == null)
-        store.removeEntity(store.getExternalData().getRefFromUUID(uuid), RemoveReason.REMOVE);
-      store.getComponent(parent, TextUtils3DTextComponent.getComponentType()).addText_entities(uuid);
+        return;
+      parent.getStore().getComponent(parent, TextUtils3DTextComponent.getComponentType()).addText_entities(uuid);
     }
 
     @Override
