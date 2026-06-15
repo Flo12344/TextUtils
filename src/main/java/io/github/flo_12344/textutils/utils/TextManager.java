@@ -2,8 +2,10 @@ package io.github.flo_12344.textutils.utils;
 
 import com.hypixel.hytale.builtin.hytalegenerator.VectorUtil;
 import com.hypixel.hytale.component.*;
-import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.math.vector.Rotation3f;
+import com.hypixel.hytale.math.vector.Rotation3fc;
+import com.hypixel.hytale.math.vector.Vector3dUtil;
+import com.hypixel.hytale.math.vector.Vector3iUtil;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.*;
@@ -15,6 +17,10 @@ import io.github.flo_12344.textutils.TextUtils;
 import io.github.flo_12344.textutils.component.Text3dDeleterComponent;
 import io.github.flo_12344.textutils.component.TextUtils3DTextComponent;
 import io.github.flo_12344.textutils.registry.TextUtilsHologramRegistry;
+import org.joml.Vector3d;
+import org.joml.Vector3dc;
+import org.joml.Vector3f;
+import org.joml.Vector3i;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -23,12 +29,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TextManager{
-  public static void SpawnText3dEntity(Vector3d pos, Vector3f rot, @Nonnull World world, String text, String _label, String font, float size){
+  public static void SpawnText3dEntity(Vector3i pos, Rotation3fc rot, @Nonnull World world, String text, String _label, String font, float size){
     world.execute(() -> {
       Store<EntityStore> store = world.getEntityStore().getStore();
       Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
 
-      TransformComponent transform = new TransformComponent(pos, rot);
+      TransformComponent transform = new TransformComponent(Vector3iUtil.toVector3d(pos), rot);
 
       holder.addComponent(TransformComponent.getComponentType(), transform);
       holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
@@ -53,14 +59,14 @@ public class TextManager{
   }
 
   public static void MoveText3dEntity(String id, World world, Store<EntityStore> store, Vector3d pos){
-    TransformText3dEntity(id, world, store, new Vector3f(), pos);
+    TransformText3dEntity(id, world, store, new Rotation3f(), pos);
   }
 
-  public static void RotateText3dEntity(String id, World world, Store<EntityStore> store, Vector3f rot){
-    TransformText3dEntity(id, world, store, new Vector3f((float) Math.toRadians(rot.x), (float) Math.toRadians(rot.y), (float) Math.toRadians(rot.z)), new Vector3d());
+  public static void RotateText3dEntity(String id, World world, Store<EntityStore> store, Rotation3f rot){
+    TransformText3dEntity(id, world, store, rot, new Vector3d());
   }
 
-  public static void TransformText3dEntity(String id, World world, Store<EntityStore> store, Vector3f rot, Vector3d pos){
+  public static void TransformText3dEntity(String id, World world, Store<EntityStore> store, Rotation3f rot, Vector3d pos){
     var text_entity = world.getEntityRef(TextUtilsHologramRegistry.get().getUUID(id));
     var textUtilsEntity = store.getComponent(text_entity, TextUtils3DTextComponent.getComponentType());
     TransformComponent transform = store.getComponent(text_entity, TransformComponent.getComponentType());

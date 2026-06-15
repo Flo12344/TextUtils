@@ -1,8 +1,10 @@
 package io.github.flo_12344.textutils.runtime;
 
+import com.hypixel.hytale.assetstore.AssetPack;
 import com.hypixel.hytale.assetstore.AssetUpdateQuery;
 import com.hypixel.hytale.common.plugin.PluginManifest;
 import com.hypixel.hytale.common.semver.Semver;
+import com.hypixel.hytale.common.semver.SemverRange;
 import com.hypixel.hytale.server.core.asset.AssetModule;
 import com.hypixel.hytale.server.core.asset.common.CommonAssetModule;
 import com.hypixel.hytale.server.core.asset.common.CommonAssetRegistry;
@@ -59,8 +61,11 @@ public class FontRuntimeManager{
     PluginManifest manifest = PluginManifest.CoreBuilder.corePlugin(TextUtils.class)
             .description("Runtime assets for Textutils").build();
     manifest.setName(RUNTIME_ASSETS_PACK);
+    manifest.setGroup("TextUtils");
     manifest.setVersion(Semver.fromString("1.0.0"));
-    AssetModule.get().registerPack(RUNTIME_ASSETS_PACK, runtimeAssetsPath, manifest, true);
+    manifest.setServerVersion(SemverRange.fromString(">=0.5.0"));
+
+    AssetModule.get().registerPack("TextUtils:" + RUNTIME_ASSETS_PACK, runtimeAssetsPath, manifest, AssetPack.PackSource.RUNTIME);
     broadcastTexturesModels();
   }
 
@@ -104,7 +109,7 @@ public class FontRuntimeManager{
     }
     var assets = CommonAssetRegistry
             .getCommonAssetsStartingWith(RUNTIME_ASSETS_PACK, "Items/Textutils/");
-    if(assets == null || assets.isEmpty()){
+    if(assets.isEmpty()){
       return;
     }
     commonAssetModule.sendAssets(assets, false);

@@ -2,9 +2,7 @@ package io.github.flo_12344.textutils.commands;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
-import com.hypixel.hytale.math.vector.Vector3i;
+import com.hypixel.hytale.math.vector.*;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -27,6 +25,8 @@ import io.github.flo_12344.textutils.utils.TextManager;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.joml.Vector3d;
+import org.joml.Vector3i;
 
 import java.util.List;
 import java.util.Objects;
@@ -79,7 +79,7 @@ public class Text3dCommand extends AbstractPlayerCommand{
     RequiredArg<String> text;
     OptionalArg<String> id;
     OptionalArg<String> font_id;
-    OptionalArg<Vector3f> rotation;
+    OptionalArg<Rotation3fc> rotation;
     OptionalArg<Float> size;
 
     protected NewCommand(){
@@ -97,8 +97,8 @@ public class Text3dCommand extends AbstractPlayerCommand{
       String content = text.get(ctx);
       if(content.startsWith("\""))
         content = content.substring(1, content.lastIndexOf("\""));
-      final Vector3d pos = position.get(ctx).toVector3d();
-      final Vector3f rot = ctx.provided(rotation) ? rotation.get(ctx) : new Vector3f();
+      final Vector3i pos = position.get(ctx);
+      final Rotation3fc rot = ctx.provided(rotation) ? rotation.get(ctx) : new Rotation3f();
       final String _id = ctx.provided(id) ? id.get(ctx) : UUID.randomUUID().toString();
       String font = ctx.provided(font_id) ? font_id.get(ctx) : "";
       final float tsize = ctx.provided(size) ? size.get(ctx) : 1.0f;
@@ -200,7 +200,7 @@ public class Text3dCommand extends AbstractPlayerCommand{
 
   public static class RotateCommand extends AbstractPlayerCommand{
     RequiredArg<String> label;
-    RequiredArg<Vector3f> rotation;
+    RequiredArg<Rotation3fc> rotation;
 
     public RotateCommand(){
       super("rotate", "Rotate the specified hologram");
@@ -216,7 +216,7 @@ public class Text3dCommand extends AbstractPlayerCommand{
         return;
       }
 
-      TextManager.RotateText3dEntity(label_str, world, store, rotation.get(ctx));
+      TextManager.RotateText3dEntity(label_str, world, store, (Rotation3f) rotation.get(ctx));
     }
   }
 

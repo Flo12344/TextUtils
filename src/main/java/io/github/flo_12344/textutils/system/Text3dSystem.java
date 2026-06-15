@@ -6,8 +6,9 @@ import com.hypixel.hytale.component.system.HolderSystem;
 import com.hypixel.hytale.component.system.RefChangeSystem;
 import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.math.util.TrigMathUtil;
-import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.math.vector.Rotation3f;
+import com.hypixel.hytale.math.vector.Rotation3fc;
+import com.hypixel.hytale.math.vector.Vector3dUtil;
 import com.hypixel.hytale.protocol.ColorLight;
 import com.hypixel.hytale.protocol.ModelTrail;
 import com.hypixel.hytale.protocol.Phobia;
@@ -29,6 +30,8 @@ import io.github.flo_12344.textutils.utils.FormattingUtils;
 import io.github.flo_12344.textutils.utils.TextManager;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
+import org.joml.Vector3d;
+import org.joml.Vector3dc;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -247,11 +250,11 @@ public class Text3dSystem{
 
     TransformComponent getCharacterTransfrom(TransformComponent transform, int linePos, int textPos, int lineLength, float charWidth, float charHeight){
       final Vector3d tPosition = transform.getPosition();
-      final Vector3f tRotation = transform.getRotation();
+      final Rotation3f tRotation = transform.getRotation();
 
       Vector3d right = new Vector3d(1, 0, 0).rotateY(tRotation.y);
-      Vector3d offset = right.scale((double) -lineLength / 2 * charWidth + textPos * charWidth);
-      Vector3d pos = tPosition.add(offset).add(new Vector3d(0, -1, 0).rotateX(tRotation.x).scale((double) linePos * charHeight));
+      Vector3d offset = right.mul((double) -lineLength / 2 * charWidth + textPos * charWidth);
+      Vector3d pos = tPosition.add(offset).add(new Vector3d(0, -1, 0).rotateX(tRotation.x).mul((double) linePos * charHeight));
       return new TransformComponent(pos, tRotation);
     }
 
@@ -286,9 +289,8 @@ public class Text3dSystem{
         transform.setRotation(head.getRotation());
         transform.getRotation().add(0, TrigMathUtil.PI, 0);
       }
-
       transform.setPosition(target_trsf.getPosition());
-      transform.getPosition().add(tracker.getOffset());
+      transform.getPosition().add((Vector3dc) tracker.getOffset());
       int text_pos = 0;
       float width;
       if(Objects.equals(textUtilsEntity.getFont_name(), "")){
@@ -301,7 +303,7 @@ public class Text3dSystem{
       for(var uuid : arr){
         var c = store.getExternalData().getRefFromUUID(uuid);
         Vector3d right = new Vector3d(1, 0, 0).rotateY(transform.getRotation().y);
-        Vector3d offset = right.scale((double) -size / 2 * width + text_pos * width);
+        Vector3d offset = right.mul(((double) -size / 2 * width + text_pos * width));
         TransformComponent t = store.getComponent(c, TransformComponent.getComponentType());
         t.setPosition(offset.add(transform.getPosition()));
         t.setRotation(transform.getRotation());
